@@ -24,60 +24,105 @@
 
   <!-- ========== LOGIN SCREEN ========== -->
   <div id="login-screen" class="screen active">
-    <div class="login-container">
-      <div class="login-logo">
-        <div class="orbit-logo-wrapper">
-          <div class="orbit-ring">
-            <div class="orbit-core"></div>
+    <div class="login-page">
+
+      <!-- Left: Branding & 3D Scene -->
+      <div class="login-hero">
+        <div class="hero-3d-scene">
+          <div class="orbit-sphere">
+            <div class="sphere-core"></div>
+            <div class="sphere-ring sphere-ring-1"></div>
+            <div class="sphere-ring sphere-ring-2"></div>
+            <div class="sphere-ring sphere-ring-3"></div>
+            <div class="sphere-dot sphere-dot-1"></div>
+            <div class="sphere-dot sphere-dot-2"></div>
+            <div class="sphere-dot sphere-dot-3"></div>
+            <div class="sphere-dot sphere-dot-4"></div>
           </div>
-          <div class="orbit-ring-inner"></div>
-          <div class="orbit-particle"></div>
-          <div class="orbit-particle"></div>
-          <div class="orbit-particle"></div>
         </div>
-        <h1>OrbitOS</h1>
-        <p class="login-subtitle">Seu sistema operacional na nuvem pessoal</p>
+        <div class="hero-text">
+          <h1 class="hero-title">OrbitOS</h1>
+          <p class="hero-tagline">Seu sistema operacional na nuvem pessoal</p>
+          <div class="hero-features">
+            <div class="hero-feature">
+              <span class="material-icons-round">cloud_done</span>
+              <span>100% Offline</span>
+            </div>
+            <div class="hero-feature">
+              <span class="material-icons-round">shield</span>
+              <span>Privacidade Total</span>
+            </div>
+            <div class="hero-feature">
+              <span class="material-icons-round">widgets</span>
+              <span>5 Apps Integrados</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="login-box glass-panel">
-        <div class="login-tabs">
-          <button class="login-tab active" data-tab="login">Entrar</button>
-          <button class="login-tab" data-tab="register">Registrar</button>
+      <!-- Right: Auth Forms -->
+      <div class="login-form-side">
+        <div class="login-form-container">
+          <div class="login-brand-mini">
+            <div class="brand-mini-orbit">
+              <div class="brand-mini-core"></div>
+            </div>
+            <span>OrbitOS</span>
+          </div>
+          <h2 class="login-heading">Bem-vindo de volta</h2>
+          <p class="login-subheading">Entre na sua conta para continuar</p>
+
+          <div class="login-tabs">
+            <button class="login-tab active" data-tab="login">Entrar</button>
+            <button class="login-tab" data-tab="register">Registrar</button>
+          </div>
+
+          <!-- Login Form -->
+          <form id="login-form" class="auth-form active">
+            <div class="input-group">
+              <span class="material-icons-round">person</span>
+              <input type="text" id="login-user" placeholder="Nome de usu&#225;rio" required autocomplete="username">
+            </div>
+            <div class="input-group">
+              <span class="material-icons-round">lock</span>
+              <input type="password" id="login-pass" placeholder="Senha" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn-login-primary">
+              <span>Entrar no Sistema</span>
+              <span class="material-icons-round">arrow_forward</span>
+            </button>
+            <p id="login-error" class="form-error"></p>
+          </form>
+
+          <!-- Register Form -->
+          <form id="register-form" class="auth-form">
+            <div class="input-group">
+              <span class="material-icons-round">person_add</span>
+              <input type="text" id="reg-user" placeholder="Escolha um usu&#225;rio" required autocomplete="username">
+            </div>
+            <div class="input-group">
+              <span class="material-icons-round">lock</span>
+              <input type="password" id="reg-pass" placeholder="Crie uma senha" required autocomplete="new-password">
+            </div>
+            <div class="input-group">
+              <span class="material-icons-round">lock</span>
+              <input type="password" id="reg-pass-confirm" placeholder="Confirme a senha" required autocomplete="new-password">
+            </div>
+            <button type="submit" class="btn-login-primary">
+              <span>Criar Conta</span>
+              <span class="material-icons-round">arrow_forward</span>
+            </button>
+            <p id="register-error" class="form-error"></p>
+            <p id="register-success" class="form-success"></p>
+          </form>
+
+          <div class="login-footer-note">
+            <span class="material-icons-round">info</span>
+            Seus dados ficam salvos localmente no navegador
+          </div>
         </div>
-
-        <!-- Login Form -->
-        <form id="login-form" class="auth-form active">
-          <div class="input-group">
-            <span class="material-icons-round">person</span>
-            <input type="text" id="login-user" placeholder="Nome de usu&#225;rio" required autocomplete="username">
-          </div>
-          <div class="input-group">
-            <span class="material-icons-round">lock</span>
-            <input type="password" id="login-pass" placeholder="Senha" required autocomplete="current-password">
-          </div>
-          <button type="submit" class="btn-primary">Entrar no Sistema</button>
-          <p id="login-error" class="form-error"></p>
-        </form>
-
-        <!-- Register Form -->
-        <form id="register-form" class="auth-form">
-          <div class="input-group">
-            <span class="material-icons-round">person_add</span>
-            <input type="text" id="reg-user" placeholder="Escolha um usu&#225;rio" required autocomplete="username">
-          </div>
-          <div class="input-group">
-            <span class="material-icons-round">lock</span>
-            <input type="password" id="reg-pass" placeholder="Crie uma senha" required autocomplete="new-password">
-          </div>
-          <div class="input-group">
-            <span class="material-icons-round">lock</span>
-            <input type="password" id="reg-pass-confirm" placeholder="Confirme a senha" required autocomplete="new-password">
-          </div>
-          <button type="submit" class="btn-primary">Criar Conta</button>
-          <p id="register-error" class="form-error"></p>
-          <p id="register-success" class="form-success"></p>
-        </form>
       </div>
+
     </div>
   </div>
 
@@ -184,6 +229,8 @@
               <option value="5">Grande</option>
               <option value="7">Muito Grande</option>
             </select>
+            <div class="toolbar-separator"></div>
+            <button class="btn-icon btn-save-drive" id="notepad-save-drive" title="Salvar no Drive"><span class="material-icons-round">cloud_upload</span></button>
             <div class="toolbar-separator"></div>
             <button class="btn-icon" id="notepad-export-txt" title="Exportar TXT"><span class="material-icons-round">description</span></button>
             <button class="btn-icon" id="notepad-export-pdf" title="Exportar PDF"><span class="material-icons-round">picture_as_pdf</span></button>

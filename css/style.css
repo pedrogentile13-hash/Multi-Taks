@@ -154,135 +154,304 @@ body::before {
 }
 
 /* ============================================
-   LOGIN SCREEN
+   LOGIN SCREEN — Modern White/Black + 3D Orbits
    ============================================ */
 #login-screen {
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
 }
 
-.login-container {
+.login-page {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Left Hero Panel --- */
+.login-hero {
+  flex: 1;
+  background: #000;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 36px;
-  animation: loginEntrance 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes loginEntrance {
-  from {
-    opacity: 0;
-    transform: translateY(40px) scale(0.96);
-    filter: blur(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
-}
-
-/* --- Orbit Logo --- */
-.login-logo {
-  text-align: center;
-  position: relative;
-}
-
-.orbit-logo-wrapper {
-  position: relative;
-  width: 120px;
-  height: 120px;
-  margin: 0 auto;
-}
-
-.orbit-ring {
-  width: 120px;
-  height: 120px;
-  border: 2px solid transparent;
-  border-top-color: var(--accent);
-  border-right-color: rgba(167, 139, 250, 0.4);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  animation: orbitSpin 4s linear infinite;
-  filter: drop-shadow(0 0 12px var(--accent-glow));
+  position: relative;
+  overflow: hidden;
 }
 
-.orbit-ring-inner {
+/* Subtle grid texture */
+.login-hero::before {
+  content: '';
   position: absolute;
-  inset: 15px;
-  border: 1.5px solid transparent;
-  border-bottom-color: var(--cyan);
-  border-left-color: rgba(34, 211, 238, 0.3);
-  border-radius: 50%;
-  animation: orbitSpin 3s linear infinite reverse;
-  filter: drop-shadow(0 0 8px var(--cyan-glow));
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
 }
 
-.orbit-core {
-  width: 32px;
-  height: 32px;
-  background: var(--accent-gradient);
+/* Radial glow behind sphere */
+.login-hero::after {
+  content: '';
+  position: absolute;
+  width: 500px;
+  height: 500px;
   border-radius: 50%;
+  background: radial-gradient(circle, rgba(120, 119, 198, 0.15) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  pointer-events: none;
+}
+
+/* --- 3D Orbital Sphere --- */
+.hero-3d-scene {
+  perspective: 800px;
+  width: 280px;
+  height: 280px;
+  position: relative;
+  margin-bottom: 48px;
+}
+
+.orbit-sphere {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: sphereFloat 8s ease-in-out infinite;
+}
+
+@keyframes sphereFloat {
+  0%, 100% { transform: rotateX(8deg) rotateY(0deg) translateY(0); }
+  25% { transform: rotateX(12deg) rotateY(5deg) translateY(-10px); }
+  50% { transform: rotateX(8deg) rotateY(0deg) translateY(0); }
+  75% { transform: rotateX(4deg) rotateY(-5deg) translateY(8px); }
+}
+
+.sphere-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 48px;
+  height: 48px;
+  background: #fff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
   box-shadow:
-    0 0 20px var(--accent-glow),
-    0 0 40px rgba(167, 139, 250, 0.15),
-    inset 0 -2px 4px rgba(0,0,0,0.3);
+    0 0 40px rgba(255, 255, 255, 0.3),
+    0 0 80px rgba(255, 255, 255, 0.1);
+  z-index: 5;
+}
+.sphere-core::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  width: 14px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  filter: blur(2px);
+}
+
+.sphere-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+}
+
+.sphere-ring-1 {
+  border-color: rgba(255, 255, 255, 0.2);
+  animation: ringOrbit1 6s linear infinite;
+  transform-style: preserve-3d;
+}
+.sphere-ring-2 {
+  inset: 30px;
+  border-color: rgba(255, 255, 255, 0.12);
+  animation: ringOrbit2 8s linear infinite;
+  transform-style: preserve-3d;
+}
+.sphere-ring-3 {
+  inset: -20px;
+  border-color: rgba(255, 255, 255, 0.08);
+  border-style: dashed;
+  animation: ringOrbit3 12s linear infinite;
+  transform-style: preserve-3d;
+}
+
+@keyframes ringOrbit1 {
+  from { transform: rotateX(65deg) rotateZ(0deg); }
+  to { transform: rotateX(65deg) rotateZ(360deg); }
+}
+@keyframes ringOrbit2 {
+  from { transform: rotateX(75deg) rotateY(45deg) rotateZ(0deg); }
+  to { transform: rotateX(75deg) rotateY(45deg) rotateZ(-360deg); }
+}
+@keyframes ringOrbit3 {
+  from { transform: rotateX(55deg) rotateY(-30deg) rotateZ(0deg); }
+  to { transform: rotateX(55deg) rotateY(-30deg) rotateZ(360deg); }
+}
+
+/* Orbiting dots */
+.sphere-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255,255,255,0.6);
+}
+.sphere-dot-1 {
+  top: 10%;
+  left: 50%;
+  animation: dotOrbit1 6s linear infinite;
+}
+.sphere-dot-2 {
+  top: 50%;
+  right: 5%;
+  width: 4px;
+  height: 4px;
+  animation: dotOrbit2 8s linear infinite;
+  opacity: 0.6;
+}
+.sphere-dot-3 {
+  bottom: 15%;
+  left: 20%;
+  width: 5px;
+  height: 5px;
+  animation: dotOrbit3 10s linear infinite;
+  opacity: 0.8;
+}
+.sphere-dot-4 {
+  top: 40%;
+  left: 10%;
+  width: 3px;
+  height: 3px;
+  animation: dotOrbit4 7s linear infinite;
+  opacity: 0.5;
+}
+
+@keyframes dotOrbit1 {
+  0% { transform: translate(0, 0); opacity: 1; }
+  25% { transform: translate(40px, 30px); opacity: 0.4; }
+  50% { transform: translate(0, 50px); opacity: 1; }
+  75% { transform: translate(-30px, 20px); opacity: 0.5; }
+  100% { transform: translate(0, 0); opacity: 1; }
+}
+@keyframes dotOrbit2 {
+  0% { transform: translate(0, 0); }
+  33% { transform: translate(-50px, -20px); }
+  66% { transform: translate(-20px, 40px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes dotOrbit3 {
+  0% { transform: translate(0, 0); opacity: 0.8; }
+  50% { transform: translate(60px, -30px); opacity: 0.3; }
+  100% { transform: translate(0, 0); opacity: 0.8; }
+}
+@keyframes dotOrbit4 {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(30px, -40px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Hero Text */
+.hero-text {
+  text-align: center;
   position: relative;
   z-index: 2;
 }
-.orbit-core::after {
-  content: '';
-  position: absolute;
-  top: 5px;
-  left: 8px;
-  width: 10px;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
-  transform: rotate(-20deg);
+
+.hero-title {
+  font-size: 3.2rem;
+  font-weight: 700;
+  letter-spacing: 8px;
+  color: #fff;
+  text-transform: uppercase;
+  margin-bottom: 10px;
 }
 
-/* Floating particles around logo */
-.orbit-particle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  background: var(--accent-bright);
-  border-radius: 50%;
-  box-shadow: 0 0 6px var(--accent-glow);
-}
-.orbit-particle:nth-child(1) {
-  top: 0; left: 50%;
-  animation: particleFloat1 4s ease-in-out infinite;
-}
-.orbit-particle:nth-child(2) {
-  bottom: 10px; right: 5px;
-  animation: particleFloat2 5s ease-in-out infinite 0.5s;
-  background: var(--cyan);
-  box-shadow: 0 0 6px var(--cyan-glow);
-}
-.orbit-particle:nth-child(3) {
-  top: 30%; left: -5px;
-  animation: particleFloat3 4.5s ease-in-out infinite 1s;
-  background: var(--pink);
-  box-shadow: 0 0 6px var(--pink-glow);
-  width: 3px; height: 3px;
+.hero-tagline {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 400;
+  letter-spacing: 1px;
+  margin-bottom: 32px;
 }
 
-@keyframes particleFloat1 {
-  0%, 100% { transform: translate(0, 0); opacity: 1; }
-  50% { transform: translate(8px, -12px); opacity: 0.5; }
+.hero-features {
+  display: flex;
+  gap: 28px;
+  justify-content: center;
 }
-@keyframes particleFloat2 {
-  0%, 100% { transform: translate(0, 0); opacity: 0.8; }
-  50% { transform: translate(-10px, 8px); opacity: 0.3; }
+.hero-feature {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  font-weight: 500;
 }
-@keyframes particleFloat3 {
-  0%, 100% { transform: translate(0, 0); opacity: 0.6; }
-  50% { transform: translate(6px, 10px); opacity: 1; }
+.hero-feature .material-icons-round {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* --- Right Form Panel --- */
+.login-form-side {
+  width: 480px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.login-form-container {
+  width: 100%;
+  max-width: 360px;
+  padding: 40px 32px;
+  animation: loginSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes loginSlideIn {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Mini brand mark */
+.login-brand-mini {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 36px;
+}
+.brand-mini-orbit {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: orbitSpin 6s linear infinite;
+}
+.brand-mini-core {
+  width: 8px;
+  height: 8px;
+  background: #000;
+  border-radius: 50%;
+}
+.login-brand-mini span {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #000;
 }
 
 @keyframes orbitSpin {
@@ -290,50 +459,26 @@ body::before {
   to { transform: rotate(360deg); }
 }
 
-.login-logo h1 {
-  font-size: 2.8rem;
+.login-heading {
+  font-size: 1.7rem;
   font-weight: 700;
-  letter-spacing: 6px;
-  background: linear-gradient(135deg, #fff 0%, var(--accent-bright) 50%, var(--cyan) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-top: 20px;
-  text-transform: uppercase;
+  color: #0a0a0a;
+  margin-bottom: 6px;
 }
-.login-subtitle {
-  color: var(--text-muted);
+.login-subheading {
   font-size: 0.9rem;
-  margin-top: 6px;
-  letter-spacing: 1px;
+  color: #888;
+  margin-bottom: 28px;
+  font-weight: 400;
 }
 
-/* Login Box */
-.login-box {
-  width: 400px;
-  padding: 36px;
-  position: relative;
-  overflow: hidden;
-}
-/* Gradient top line */
-.login-box::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 20%;
-  right: 20%;
-  height: 2px;
-  background: var(--accent-gradient);
-  border-radius: 2px;
-  opacity: 0.6;
-}
-
+/* Login Tabs — white theme */
 .login-tabs {
   display: flex;
   gap: 4px;
-  margin-bottom: 28px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: var(--radius-sm);
+  margin-bottom: 24px;
+  background: #f4f4f5;
+  border-radius: 10px;
   padding: 4px;
 }
 .login-tab {
@@ -341,24 +486,25 @@ body::before {
   padding: 10px;
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: #999;
   font-family: var(--font);
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 0.88rem;
+  font-weight: 600;
   cursor: pointer;
   transition: var(--transition);
   border-radius: 7px;
   letter-spacing: 0.3px;
 }
 .login-tab.active {
-  color: var(--text-primary);
-  background: var(--glass-bg-strong);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  color: #0a0a0a;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 .login-tab:hover:not(.active) {
-  color: var(--text-secondary);
+  color: #555;
 }
 
+/* Auth forms — white theme */
 .auth-form {
   display: none;
   flex-direction: column;
@@ -374,6 +520,110 @@ body::before {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Input groups — white theme */
+.login-form-side .input-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8f8f9;
+  border: 1.5px solid #e5e5e7;
+  border-radius: 12px;
+  padding: 0 16px;
+  transition: var(--transition);
+}
+.login-form-side .input-group:focus-within {
+  border-color: #0a0a0a;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+  background: #fff;
+}
+.login-form-side .input-group .material-icons-round {
+  font-size: 20px;
+  color: #bbb;
+  transition: var(--transition);
+}
+.login-form-side .input-group:focus-within .material-icons-round {
+  color: #0a0a0a;
+}
+.login-form-side .input-group input {
+  flex: 1;
+  padding: 14px 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: #0a0a0a;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  letter-spacing: 0.2px;
+}
+.login-form-side .input-group input::placeholder {
+  color: #aaa;
+}
+
+/* Login button — white theme */
+.btn-login-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: #0a0a0a;
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  letter-spacing: 0.5px;
+  margin-top: 6px;
+}
+.btn-login-primary .material-icons-round {
+  font-size: 18px;
+  transition: transform 0.2s ease;
+}
+.btn-login-primary:hover {
+  background: #1a1a1a;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+.btn-login-primary:hover .material-icons-round {
+  transform: translateX(4px);
+}
+.btn-login-primary:active {
+  transform: translateY(0);
+}
+
+/* Form messages — white theme */
+.login-form-side .form-error {
+  color: #e11d48;
+  font-size: 0.82rem;
+  min-height: 18px;
+}
+.login-form-side .form-success {
+  color: #059669;
+  font-size: 0.82rem;
+  min-height: 18px;
+}
+
+/* Login footer note */
+.login-footer-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+  font-size: 0.78rem;
+  color: #999;
+  font-weight: 400;
+}
+.login-footer-note .material-icons-round {
+  font-size: 16px;
+  color: #ccc;
+}
+
+/* --- Desktop-mode original input groups (keep for desktop windows) --- */
 .input-group {
   display: flex;
   align-items: center;
@@ -1826,6 +2076,17 @@ body::before {
 }
 .ctx-item .material-icons-round { font-size: 18px; }
 
+/* Save to Drive button highlight */
+.btn-save-drive {
+  background: rgba(56, 189, 248, 0.1) !important;
+  border-color: rgba(56, 189, 248, 0.2) !important;
+  color: var(--app-drive) !important;
+}
+.btn-save-drive:hover {
+  background: rgba(56, 189, 248, 0.2) !important;
+  box-shadow: 0 2px 12px var(--sky-glow);
+}
+
 /* ============================================
    RESPONSIVE
    ============================================ */
@@ -1842,5 +2103,37 @@ body::before {
   .chat-sidebar { width: 0; padding: 0; overflow: hidden; }
   .kanban-board { flex-direction: column; }
   .kanban-column { min-width: auto; }
-  .login-box { width: 92vw; padding: 24px; }
+
+  /* Login page responsive */
+  .login-page {
+    flex-direction: column;
+  }
+  .login-hero {
+    flex: 0 0 auto;
+    padding: 40px 20px;
+    min-height: 280px;
+  }
+  .hero-3d-scene {
+    width: 160px;
+    height: 160px;
+    margin-bottom: 24px;
+  }
+  .hero-title {
+    font-size: 2rem;
+    letter-spacing: 4px;
+  }
+  .hero-features {
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+  .login-form-side {
+    width: 100%;
+    flex: 1;
+    border-radius: 24px 24px 0 0;
+    margin-top: -20px;
+  }
+  .login-form-container {
+    padding: 28px 24px;
+  }
 }

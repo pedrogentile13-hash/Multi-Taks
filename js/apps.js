@@ -308,6 +308,55 @@ const NotepadApp = {
         link.click();
       });
     });
+
+    // Save to Drive
+    document.getElementById('notepad-save-drive').addEventListener('click', async () => {
+      await this.saveToDrive();
+    });
+  },
+
+  async saveToDrive() {
+    const editor = document.getElementById('notepad-editor');
+    const content = editor.innerHTML;
+    const textContent = editor.innerText.trim();
+
+    if (!textContent) {
+      alert('O bloco de notas está vazio. Escreva algo antes de salvar!');
+      return;
+    }
+
+    const name = await showPrompt('Salvar no Drive', 'Nome do arquivo (ex: minhas-notas)');
+    if (!name) return;
+
+    const fileName = name.endsWith('.html') ? name : name + '.html';
+
+    // Save as HTML to preserve formatting
+    const htmlBlob = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>${fileName}</title>
+<style>body{font-family:Inter,sans-serif;padding:24px;line-height:1.8;color:#222;max-width:800px;margin:0 auto;}</style>
+</head><body>${content}</body></html>`;
+
+    const base64 = 'data:text/html;base64,' + btoa(unescape(encodeURIComponent(htmlBlob)));
+
+    await db.files.add({
+      name: fileName,
+      parentId: DriveApp.getParentId(),
+      type: 'file',
+      mimeType: 'text/html',
+      blob: base64,
+      createdAt: Date.now()
+    });
+
+    // Visual feedback
+    const btn = document.getElementById('notepad-save-drive');
+    const icon = btn.querySelector('.material-icons-round');
+    const originalIcon = icon.textContent;
+    icon.textContent = 'check_circle';
+    btn.style.color = 'var(--emerald)';
+    setTimeout(() => {
+      icon.textContent = originalIcon;
+      btn.style.color = '';
+    }, 2000);
   },
 
   downloadBlob(blob, filename) {
@@ -609,15 +658,30 @@ const ChatApp = {
     {
       patterns: [/^ajuda$/i, /^help$/i, /^comandos$/i, /^menu$/i],
       response: `Aqui estão os comandos que eu entendo:
-<br>• <strong>"ajuda"</strong> — Mostra esta lista
-<br>• <strong>"como criar pasta"</strong> — Ensina a criar pastas no Drive
-<br>• <strong>"como fazer upload"</strong> — Ensina a enviar arquivos
-<br>• <strong>"como usar kanban"</strong> — Dicas do gerenciador de projetos
-<br>• <strong>"como exportar notas"</strong> — Formatos de exportação
+<br><br>📂 <strong>OrbitOS:</strong>
+<br>• <strong>"como criar pasta"</strong> — Criar pastas no Drive
+<br>• <strong>"como fazer upload"</strong> — Enviar arquivos
+<br>• <strong>"como usar kanban"</strong> — Gerenciador de projetos
+<br>• <strong>"como exportar notas"</strong> — Exportar do Bloco de Notas
 <br>• <strong>"calculadora"</strong> — Dicas da calculadora
-<br>• <strong>"resumo"</strong> — Resumo do sistema
-<br>• <strong>"hora"</strong> — Mostra a hora atual
-<br>• <strong>"sobre"</strong> — Sobre o OrbitOS`
+<br>• <strong>"sobre"</strong> — Sobre o OrbitOS
+<br><br>🕐 <strong>Utilidades:</strong>
+<br>• <strong>"hora"</strong> / <strong>"data"</strong> — Hora e data atual
+<br>• <strong>"converter"</strong> — Tabela de conversões
+<br>• <strong>"senha segura"</strong> — Dicas de segurança digital
+<br>• <strong>"lembrete"</strong> — Como criar lembretes
+<br><br>🧠 <strong>Dia a dia:</strong>
+<br>• <strong>"motivação"</strong> — Frase motivacional
+<br>• <strong>"produtividade"</strong> — Dicas para focar
+<br>• <strong>"estudar"</strong> — Técnicas de estudo
+<br>• <strong>"dormir"</strong> — Dicas de sono
+<br>• <strong>"exercício"</strong> — Dicas de treino
+<br>• <strong>"receita"</strong> — Receitas rápidas
+<br>• <strong>"finanças"</strong> — Dicas financeiras
+<br>• <strong>"música"</strong> — Sugestões musicais
+<br>• <strong>"piada"</strong> — Uma piada para descontrair
+<br>• <strong>"curiosidade"</strong> — Fatos interessantes
+<br>• <strong>"programação"</strong> — Dicas de código`
     },
     {
       patterns: [/como criar pasta/i, /criar pasta/i, /nova pasta/i],
@@ -703,6 +767,236 @@ const ChatApp = {
           'Por nada! Fico feliz em ajudar.'
         ];
         return thanks[Math.floor(Math.random() * thanks.length)];
+      }
+    },
+    // ─── Everyday Practical Responses ───
+    {
+      patterns: [/que dia|qual a data|data de hoje|dia hoje/i],
+      response: () => {
+        const now = new Date();
+        const dias = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+        return `Hoje é <strong>${dias[now.getDay()]}</strong>, <strong>${now.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</strong>.`;
+      }
+    },
+    {
+      patterns: [/motivação|motivar|frase motivacional|me inspira|preciso de motivação/i],
+      response: () => {
+        const quotes = [
+          '"O sucesso é a soma de pequenos esforços repetidos dia após dia." — Robert Collier',
+          '"A persistência é o caminho do êxito." — Charlie Chaplin',
+          '"Acredite em si mesmo e tudo será possível." — Unknown',
+          '"Não espere por oportunidades extraordinárias. Agarre ocasiões comuns e as torne grandes." — Orison Swett Marden',
+          '"O único lugar onde o sucesso vem antes do trabalho é no dicionário." — Vidal Sassoon',
+          '"Comece de onde você está. Use o que tem. Faça o que puder." — Arthur Ashe',
+          '"Toda grande conquista foi primeiro um sonho impossível." — Unknown',
+          '"A diferença entre ordinário e extraordinário é aquele pequeno extra." — Jimmy Johnson'
+        ];
+        return `💪 <strong>Motivação do momento:</strong><br><br><em>${quotes[Math.floor(Math.random() * quotes.length)]}</em>`;
+      }
+    },
+    {
+      patterns: [/piada|me conta uma piada|piada de|conte uma piada|humor/i],
+      response: () => {
+        const jokes = [
+          'Por que o programador usa óculos? Porque ele não consegue C#! 😄',
+          'O que o JavaScript disse para o CSS? "Você não tem classe!" 😂',
+          'Por que o computador foi ao médico? Porque tinha um vírus! 🤒',
+          'O que é um byte? Um bit que jantou! 🍽️',
+          'Quantos programadores são necessários para trocar uma lâmpada? Nenhum, isso é um problema de hardware! 💡',
+          'Por que o Wi-Fi terminou com a internet? Porque não tinha mais conexão! 📶'
+        ];
+        return jokes[Math.floor(Math.random() * jokes.length)];
+      }
+    },
+    {
+      patterns: [/dica de produtividade|ser mais produtivo|produtividade|dica para focar|foco/i],
+      response: () => {
+        const tips = [
+          '<strong>Técnica Pomodoro:</strong> Trabalhe 25 min focado → Pause 5 min → Repita. A cada 4 ciclos, pause 15-30 min.',
+          '<strong>Regra dos 2 minutos:</strong> Se algo leva menos de 2 minutos para fazer, faça agora!',
+          '<strong>Eat the Frog:</strong> Comece o dia pela tarefa mais difícil. O resto parecerá fácil!',
+          '<strong>Bloco de Tempo:</strong> Reserve blocos específicos no dia para cada tipo de tarefa. Evite multitarefas!',
+          '<strong>Regra 80/20:</strong> 20% das suas ações geram 80% dos resultados. Identifique e priorize essas ações.',
+          '<strong>Digital Detox:</strong> Desative notificações não essenciais. Cada interrupção leva ~23 min para retomar o foco!'
+        ];
+        return `📋 <strong>Dica de Produtividade:</strong><br><br>${tips[Math.floor(Math.random() * tips.length)]}`;
+      }
+    },
+    {
+      patterns: [/converter|conversão|quanto é.*em|celsius|fahrenheit|metros|quilos|libras|km|milhas/i],
+      response: `<strong>Conversões úteis:</strong>
+<br>• <strong>Temperatura:</strong> °C × 1.8 + 32 = °F | (°F − 32) ÷ 1.8 = °C
+<br>• <strong>Peso:</strong> 1 kg = 2.205 libras | 1 libra = 0.454 kg
+<br>• <strong>Distância:</strong> 1 km = 0.621 milhas | 1 milha = 1.609 km
+<br>• <strong>Volume:</strong> 1 litro = 0.264 galões | 1 galão = 3.785 litros
+<br>• <strong>Área:</strong> 1 m² = 10.764 pés² | 1 hectare = 10.000 m²
+<br><br>Use a <strong>Calculadora</strong> do OrbitOS para os cálculos! 🧮`
+    },
+    {
+      patterns: [/clima|tempo|previsão|vai chover|chuva|sol|frio|calor/i],
+      response: `Infelizmente não tenho acesso à internet para checar o clima em tempo real. 🌤️
+<br><br>Mas posso te dar <strong>dicas úteis</strong>:
+<br>• Consulte sites como <strong>Climatempo</strong> ou <strong>AccuWeather</strong>
+<br>• No celular, o app do tempo nativo já ajuda bastante
+<br>• Leve um guarda-chuva se houver mais de 40% de chance de chuva!`
+    },
+    {
+      patterns: [/receita|culinária|cozinhar|o que fazer para comer|comida/i],
+      response: () => {
+        const recipes = [
+          '<strong>Omelete rápida:</strong> 2 ovos + sal + o que tiver (queijo, tomate, presunto). Bata, despeje na frigideira quente com manteiga. 3 min de cada lado!',
+          '<strong>Macarrão alho e óleo:</strong> Cozinhe o macarrão. Em uma panela: azeite + 4 dentes de alho fatiados + pimenta. Misture tudo. Simples e delicioso!',
+          '<strong>Sanduíche natural:</strong> Pão integral + peito de frango desfiado + cenoura ralada + milho + maionese light. Pronto em 5 min!',
+          '<strong>Arroz de micro-ondas:</strong> 1 xícara de arroz + 2 de água + sal + azeite. Tampa com filme, micro-ondas 18 min. Funciona!',
+          '<strong>Banana com aveia:</strong> Amasse 1 banana + 3 colheres de aveia + canela. Frigideira antiaderente, 2 min de cada lado. Panqueca fitness!'
+        ];
+        return `🍳 <strong>Receita rápida:</strong><br><br>${recipes[Math.floor(Math.random() * recipes.length)]}`;
+      }
+    },
+    {
+      patterns: [/exercício|treino|academia|malhar|atividade física|se exercitar/i],
+      response: () => {
+        const workouts = [
+          '<strong>Treino rápido em casa (15 min):</strong><br>• 20 agachamentos<br>• 15 flexões<br>• 30s prancha<br>• 20 polichinelos<br>• 10 burpees<br>Repita 3x!',
+          '<strong>Alongamento matinal:</strong><br>• Estique os braços para cima (15s)<br>• Toque os pés (15s)<br>• Gire os ombros (10x)<br>• Gire o pescoço (10x)<br>• Alongue as laterais (15s cada)',
+          '<strong>Caminhada produtiva:</strong> 30 min de caminhada por dia reduz estresse, melhora o humor e queima ~150 calorias. Coloque um podcast e aproveite!'
+        ];
+        return `💪 <strong>Dica de Exercício:</strong><br><br>${workouts[Math.floor(Math.random() * workouts.length)]}`;
+      }
+    },
+    {
+      patterns: [/estudar|dica de estudo|como estudar|aprender|estudo/i],
+      response: () => {
+        const tips = [
+          '<strong>Repetição Espaçada:</strong> Revise o conteúdo em intervalos crescentes (1 dia, 3 dias, 7 dias, 21 dias). A memorização é muito mais eficiente!',
+          '<strong>Técnica Feynman:</strong> Tente explicar o assunto como se fosse ensinar uma criança. Se não conseguir, volte e estude mais aquela parte.',
+          '<strong>Mapas Mentais:</strong> Resuma temas complexos em diagramas visuais. O cérebro memoriza imagens melhor que textos!',
+          '<strong>Estudo Ativo:</strong> Em vez de só ler, faça perguntas, resolva exercícios e teste a si mesmo. Ler é passivo, praticar é ativo!'
+        ];
+        return `📚 <strong>Dica de Estudo:</strong><br><br>${tips[Math.floor(Math.random() * tips.length)]}`;
+      }
+    },
+    {
+      patterns: [/dormir|sono|insônia|dormir melhor|não consigo dormir/i],
+      response: `😴 <strong>Dicas para dormir melhor:</strong>
+<br>• Evite telas (celular, PC) 30 min antes de dormir
+<br>• Mantenha horário regular de sono (mesmo nos finais de semana)
+<br>• Evite cafeína após as 16h
+<br>• Mantenha o quarto escuro e fresco
+<br>• Tente técnica 4-7-8: Inspire 4s → Segure 7s → Expire 8s
+<br>• Leia um livro físico antes de dormir`
+    },
+    {
+      patterns: [/música|playlist|ouvir música|recomendar música/i],
+      response: () => {
+        const genres = [
+          '<strong>Para focar:</strong> Lo-fi hip hop, músicas instrumentais, trilhas sonoras de filmes, música clássica (Mozart, Bach)',
+          '<strong>Para animar:</strong> Pop, funk brasileiro, rock clássico, eletrônica',
+          '<strong>Para relaxar:</strong> Jazz suave, bossa nova, ambient, sons da natureza',
+          '<strong>Para treinar:</strong> Hip hop, EDM, rock pesado, trap'
+        ];
+        return `🎵 <strong>Sugestão Musical:</strong><br><br>${genres[Math.floor(Math.random() * genres.length)]}<br><br>Busque playlists no Spotify ou YouTube!`;
+      }
+    },
+    {
+      patterns: [/tédio|entediado|fazer o que|sem nada para fazer|estou à toa/i],
+      response: () => {
+        const ideas = [
+          'Que tal organizar seu Orbit Drive? Crie pastas e organize seus arquivos! 📁',
+          'Use o Kanban para planejar seus próximos projetos pessoais! 📋',
+          'Escreva um diário no Bloco de Notas — registre como foi seu dia! ✍️',
+          'Aprenda algo novo: veja um tutorial, leia um artigo, ou comece um curso online! 📚',
+          'Faça uma lista de metas para este mês no Bloco de Notas! 🎯',
+          'Organize suas ideias em um brainstorm usando o Bloco de Notas! 💡'
+        ];
+        return ideas[Math.floor(Math.random() * ideas.length)];
+      }
+    },
+    {
+      patterns: [/ansiedade|ansioso|estressado|estresse|calma|acalmar/i],
+      response: `🧘 <strong>Técnicas para acalmar:</strong>
+<br>• <strong>Respiração 4-7-8:</strong> Inspire (4s) → Segure (7s) → Expire (8s). Repita 4x
+<br>• <strong>Grounding 5-4-3-2-1:</strong> Observe 5 coisas que vê, 4 que toca, 3 que ouve, 2 que cheira, 1 que saboreia
+<br>• <strong>Caminhada curta:</strong> 10 min de caminhada já libera endorfina
+<br>• <strong>Escreva:</strong> Coloque seus pensamentos no Bloco de Notas. Externalizar ajuda!
+<br><br>Se a ansiedade for constante, procure ajuda profissional. CVV: <strong>188</strong> 💚`
+    },
+    {
+      patterns: [/dinheiro|finanças|economia|economizar|gastar menos|poupar/i],
+      response: `💰 <strong>Dicas de Finanças:</strong>
+<br>• <strong>Regra 50/30/20:</strong> 50% necessidades, 30% desejos, 20% poupança/investimentos
+<br>• <strong>Anote gastos:</strong> Use o Bloco de Notas para registrar despesas diárias por 30 dias
+<br>• <strong>Corte assinaturas:</strong> Revise serviços mensais que você não usa
+<br>• <strong>Compras:</strong> Espere 24h antes de comprar algo não essencial (evita compras por impulso)
+<br>• <strong>Reserva:</strong> Tente guardar pelo menos 3-6 meses de despesas para emergências`
+    },
+    {
+      patterns: [/senha segura|criar senha|senha forte|segurança digital|privacidade/i],
+      response: `🔐 <strong>Dicas de Segurança Digital:</strong>
+<br>• Use senhas com 12+ caracteres, misturando letras, números e símbolos
+<br>• Nunca reutilize a mesma senha em sites diferentes
+<br>• Ative autenticação de dois fatores (2FA) em tudo
+<br>• Cuidado com links em e-mails suspeitos (phishing)
+<br>• Mantenha seu sistema e apps atualizados
+<br>• Use um gerenciador de senhas (Bitwarden, 1Password)`
+    },
+    {
+      patterns: [/como estou|como vai|tudo bem|como você está/i],
+      response: () => {
+        const replies = [
+          'Estou ótimo, obrigado por perguntar! 😊 E você, como posso ajudar?',
+          'Tudo bem por aqui! Estou pronto para ajudar no que precisar!',
+          'Funcionando perfeitamente! Me diga, o que posso fazer por você?',
+          'Muito bem! Sempre disponível para ajudar. O que precisa?'
+        ];
+        return replies[Math.floor(Math.random() * replies.length)];
+      }
+    },
+    {
+      patterns: [/tchau|bye|até mais|até logo|falou|fui/i],
+      response: () => {
+        const byes = [
+          'Até mais! Volte quando precisar! 👋',
+          'Tchau! Bom restante de dia! 🌟',
+          'Até logo! Estarei aqui quando voltar. 😊',
+          'Falou! Qualquer coisa, é só chamar! ✌️'
+        ];
+        return byes[Math.floor(Math.random() * byes.length)];
+      }
+    },
+    {
+      patterns: [/lembrete|me lembre|lembrar|não esquecer/i],
+      response: `⏰ Ainda não tenho sistema de lembretes com notificações, mas posso sugerir:
+<br>• Crie uma tarefa no <strong>Kanban</strong> como lembrete visual
+<br>• Escreva no <strong>Bloco de Notas</strong> e salve no Drive
+<br>• Use o alarme do seu celular para lembretes com horário`
+    },
+    {
+      patterns: [/programar|programação|código|html|css|javascript|python/i],
+      response: () => {
+        const tips = [
+          '<strong>Dica de JS:</strong> Use <code>console.table()</code> em vez de <code>console.log()</code> para visualizar arrays e objetos de forma mais organizada!',
+          '<strong>Dica de CSS:</strong> Use <code>gap</code> no Flexbox/Grid em vez de margins. Mais limpo e consistente!',
+          '<strong>Dica Geral:</strong> Escreva código como se a pessoa que vai mantê-lo fosse um psicopata que sabe onde você mora. 😅 Nomes claros > comentários!',
+          '<strong>Para iniciantes:</strong> Comece com HTML + CSS + JS. Depois explore frameworks. Não tente aprender tudo de uma vez!',
+          '<strong>Dica de Debug:</strong> Leia a mensagem de erro INTEIRA antes de buscar no Google. Ela geralmente diz exatamente o problema!'
+        ];
+        return `💻 <strong>Dica de Programação:</strong><br><br>${tips[Math.floor(Math.random() * tips.length)]}`;
+      }
+    },
+    {
+      patterns: [/curiosidade|fato curioso|sabia que|fato interessante|me surpreenda/i],
+      response: () => {
+        const facts = [
+          'O primeiro computador pesava 27 toneladas e ocupava uma sala inteira (ENIAC, 1945)! 🖥️',
+          'O nome "Google" vem de "googol" — o número 1 seguido de 100 zeros! 🔢',
+          'Um raio pode aquecer o ar ao redor a até 30.000°C — 5x mais quente que a superfície do Sol! ⚡',
+          'Seu cérebro gera cerca de 12-25 watts de eletricidade — suficiente para acender uma lâmpada LED! 🧠',
+          'O primeiro SMS da história foi enviado em 1992 e dizia "Merry Christmas" 📱',
+          'Existem mais formas possíveis de organizar um baralho de cartas do que átomos na Terra! 🃏',
+          'O mel nunca estraga. Arqueólogos encontraram mel de 3000 anos no Egito ainda comestível! 🍯'
+        ];
+        return `🤓 <strong>Curiosidade:</strong><br><br>${facts[Math.floor(Math.random() * facts.length)]}`;
       }
     }
   ],
