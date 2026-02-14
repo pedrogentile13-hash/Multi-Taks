@@ -129,28 +129,100 @@
   <!-- ========== DESKTOP ENVIRONMENT ========== -->
   <div id="desktop" class="screen">
 
-    <!-- Desktop Icons with gradient backgrounds -->
-    <div id="desktop-icons">
-      <div class="desktop-icon" data-app="drive">
-        <div class="icon-bg"><span class="material-icons-round">cloud</span></div>
-        <span class="icon-label">Orbit Drive</span>
+    <!-- Desktop Launcher -->
+    <div id="desktop-launcher">
+
+      <!-- Greeting Header -->
+      <div class="launcher-header">
+        <div class="launcher-greeting">
+          <h1 class="greeting-text">Ol&#225;, <span id="greeting-user">Usu&#225;rio</span></h1>
+          <p class="greeting-date" id="greeting-date"></p>
+        </div>
+        <div class="launcher-brand">
+          <div class="brand-orbit-icon">
+            <div class="brand-orbit-ring"></div>
+            <div class="brand-orbit-core"></div>
+          </div>
+        </div>
       </div>
-      <div class="desktop-icon" data-app="notepad">
-        <div class="icon-bg"><span class="material-icons-round">edit_note</span></div>
-        <span class="icon-label">Bloco de Notas</span>
+
+      <!-- Quick Stats Bar -->
+      <div class="launcher-stats">
+        <div class="stat-pill">
+          <span class="material-icons-round">schedule</span>
+          <span id="launcher-clock">00:00</span>
+        </div>
+        <div class="stat-pill">
+          <span class="material-icons-round">storage</span>
+          <span>Local</span>
+        </div>
+        <div class="stat-pill stat-online">
+          <span class="stat-dot"></span>
+          <span>Online</span>
+        </div>
       </div>
-      <div class="desktop-icon" data-app="calculator">
-        <div class="icon-bg"><span class="material-icons-round">calculate</span></div>
-        <span class="icon-label">Calculadora</span>
+
+      <!-- App Grid -->
+      <div class="app-grid">
+        <button class="app-card" data-app="drive">
+          <div class="app-card-icon drive-icon">
+            <span class="material-icons-round">cloud</span>
+          </div>
+          <div class="app-card-info">
+            <span class="app-card-name">Orbit Drive</span>
+            <span class="app-card-desc">Arquivos e pastas</span>
+          </div>
+          <span class="material-icons-round app-card-arrow">arrow_forward</span>
+        </button>
+        <button class="app-card" data-app="notepad">
+          <div class="app-card-icon notepad-icon">
+            <span class="material-icons-round">edit_note</span>
+          </div>
+          <div class="app-card-info">
+            <span class="app-card-name">Bloco de Notas</span>
+            <span class="app-card-desc">Editor de texto</span>
+          </div>
+          <span class="material-icons-round app-card-arrow">arrow_forward</span>
+        </button>
+        <button class="app-card" data-app="calculator">
+          <div class="app-card-icon calc-icon">
+            <span class="material-icons-round">calculate</span>
+          </div>
+          <div class="app-card-info">
+            <span class="app-card-name">Calculadora</span>
+            <span class="app-card-desc">Cient&#237;fica</span>
+          </div>
+          <span class="material-icons-round app-card-arrow">arrow_forward</span>
+        </button>
+        <button class="app-card" data-app="kanban">
+          <div class="app-card-icon kanban-icon">
+            <span class="material-icons-round">view_kanban</span>
+          </div>
+          <div class="app-card-info">
+            <span class="app-card-name">Projetos</span>
+            <span class="app-card-desc">Kanban board</span>
+          </div>
+          <span class="material-icons-round app-card-arrow">arrow_forward</span>
+        </button>
       </div>
-      <div class="desktop-icon" data-app="kanban">
-        <div class="icon-bg"><span class="material-icons-round">view_kanban</span></div>
-        <span class="icon-label">Projetos</span>
-      </div>
-      <div class="desktop-icon" data-app="chat">
-        <div class="icon-bg"><span class="material-icons-round">forum</span></div>
-        <span class="icon-label">Team Chat</span>
-      </div>
+
+      <!-- Featured Card: Chat/AI -->
+      <button class="app-card-featured" data-app="chat">
+        <div class="featured-left">
+          <div class="app-card-icon chat-icon">
+            <span class="material-icons-round">smart_toy</span>
+          </div>
+          <div class="app-card-info">
+            <span class="app-card-name">Orbit Bot</span>
+            <span class="app-card-desc">Assistente IA com dicas, receitas, produtividade e mais</span>
+          </div>
+        </div>
+        <div class="featured-badge">
+          <span class="stat-dot"></span>
+          Online
+        </div>
+      </button>
+
     </div>
 
     <!-- ========== WINDOW MANAGER ========== -->
@@ -399,10 +471,7 @@
       </div>
       <div class="taskbar-apps" id="taskbar-apps"></div>
       <div class="taskbar-tray">
-        <div class="taskbar-user-badge">
-          <span class="material-icons-round">person</span>
-          <span id="taskbar-user"></span>
-        </div>
+        <span id="taskbar-user" style="display:none"></span>
         <span id="taskbar-clock" class="taskbar-clock"></span>
         <button id="btn-logout" class="logout-btn" title="Sair">
           <span class="material-icons-round">logout</span>

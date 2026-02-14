@@ -69,6 +69,13 @@ function showScreen(screenId) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const screen = document.getElementById(screenId);
   if (screen) screen.classList.add('active');
+
+  // Toggle body class for background switching
+  if (screenId === 'desktop') {
+    document.body.classList.add('desktop-active');
+  } else {
+    document.body.classList.remove('desktop-active');
+  }
 }
 
 // ─── Window Manager ───
@@ -86,7 +93,7 @@ const WindowManager = {
         maximized: false
       };
 
-      // Dragging
+      // Dragging (mouse + touch)
       const header = win.querySelector('.window-header');
       header.addEventListener('mousedown', (e) => {
         if (e.target.closest('.window-controls')) return;
@@ -98,6 +105,17 @@ const WindowManager = {
           startY: e.clientY - win.offsetTop
         };
       });
+      header.addEventListener('touchstart', (e) => {
+        if (e.target.closest('.window-controls')) return;
+        if (this.windows[app].maximized) return;
+        this.focus(app);
+        const touch = e.touches[0];
+        this.dragState = {
+          app,
+          startX: touch.clientX - win.offsetLeft,
+          startY: touch.clientY - win.offsetTop
+        };
+      }, { passive: true });
 
       // Window controls
       win.querySelectorAll('.win-btn').forEach(btn => {
@@ -113,7 +131,7 @@ const WindowManager = {
       win.addEventListener('mousedown', () => this.focus(app));
     });
 
-    // Global mouse move/up for dragging
+    // Global mouse/touch move/up for dragging
     document.addEventListener('mousemove', (e) => {
       if (!this.dragState) return;
       const win = this.windows[this.dragState.app].el;
@@ -122,7 +140,19 @@ const WindowManager = {
       win.style.left = Math.max(0, x) + 'px';
       win.style.top = Math.max(0, y) + 'px';
     });
+    document.addEventListener('touchmove', (e) => {
+      if (!this.dragState) return;
+      const touch = e.touches[0];
+      const win = this.windows[this.dragState.app].el;
+      const x = touch.clientX - this.dragState.startX;
+      const y = touch.clientY - this.dragState.startY;
+      win.style.left = Math.max(0, x) + 'px';
+      win.style.top = Math.max(0, y) + 'px';
+    }, { passive: true });
     document.addEventListener('mouseup', () => {
+      this.dragState = null;
+    });
+    document.addEventListener('touchend', () => {
       this.dragState = null;
     });
   },
@@ -133,6 +163,13 @@ const WindowManager = {
     w.el.classList.add('visible');
     w.el.classList.remove('minimized');
     w.minimized = false;
+
+    // Auto-maximize on mobile
+    if (window.innerWidth <= 768) {
+      w.el.classList.add('maximized');
+      w.maximized = true;
+    }
+
     this.focus(app);
     this.updateTaskbar();
 
@@ -363,15 +400,37 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('taskbar-user').textContent = username;
     document.getElementById('start-menu-user').textContent = username;
 
+    // Update greeting
+    const greetingUser = document.getElementById('greeting-user');
+    if (greetingUser) greetingUser.textContent = username;
+
+    const greetingDate = document.getElementById('greeting-date');
+    if (greetingDate) {
+      const now = new Date();
+      const dias = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+      greetingDate.textContent = `${dias[now.getDay()]}, ${now.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}`;
+    }
+
     WindowManager.init();
     updateClock();
+    updateLauncherClock();
     setInterval(updateClock, 30000);
+    setInterval(updateLauncherClock, 30000);
   }
 
-  // Desktop icon clicks
-  document.querySelectorAll('.desktop-icon').forEach(icon => {
-    icon.addEventListener('dblclick', () => {
-      WindowManager.open(icon.dataset.app);
+  // Launcher clock
+  function updateLauncherClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const el = document.getElementById('launcher-clock');
+    if (el) el.textContent = `${h}:${m}`;
+  }
+
+  // App card clicks (single tap — works on mobile!)
+  document.querySelectorAll('.app-card, .app-card-featured').forEach(card => {
+    card.addEventListener('click', () => {
+      WindowManager.open(card.dataset.app);
     });
   });
 
