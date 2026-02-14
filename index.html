@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OrbitOS - Web Operating System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Dexie.js for IndexedDB -->
+  <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
+  <!-- SortableJS for Kanban drag-and-drop -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <!-- jsPDF for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- html2canvas for PNG export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ========== LOGIN SCREEN ========== -->
+  <div id="login-screen" class="screen active">
+    <div class="login-container">
+      <div class="login-logo">
+        <div class="orbit-ring">
+          <div class="orbit-core"></div>
+        </div>
+        <h1>OrbitOS</h1>
+        <p class="login-subtitle">Seu sistema operacional na nuvem pessoal</p>
+      </div>
+
+      <div class="login-box glass-panel">
+        <div class="login-tabs">
+          <button class="login-tab active" data-tab="login">Entrar</button>
+          <button class="login-tab" data-tab="register">Registrar</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" class="auth-form active">
+          <div class="input-group">
+            <span class="material-icons-round">person</span>
+            <input type="text" id="login-user" placeholder="Nome de usu&#225;rio" required autocomplete="username">
+          </div>
+          <div class="input-group">
+            <span class="material-icons-round">lock</span>
+            <input type="password" id="login-pass" placeholder="Senha" required autocomplete="current-password">
+          </div>
+          <button type="submit" class="btn-primary">Entrar no Sistema</button>
+          <p id="login-error" class="form-error"></p>
+        </form>
+
+        <!-- Register Form -->
+        <form id="register-form" class="auth-form">
+          <div class="input-group">
+            <span class="material-icons-round">person_add</span>
+            <input type="text" id="reg-user" placeholder="Escolha um usu&#225;rio" required autocomplete="username">
+          </div>
+          <div class="input-group">
+            <span class="material-icons-round">lock</span>
+            <input type="password" id="reg-pass" placeholder="Crie uma senha" required autocomplete="new-password">
+          </div>
+          <div class="input-group">
+            <span class="material-icons-round">lock</span>
+            <input type="password" id="reg-pass-confirm" placeholder="Confirme a senha" required autocomplete="new-password">
+          </div>
+          <button type="submit" class="btn-primary">Criar Conta</button>
+          <p id="register-error" class="form-error"></p>
+          <p id="register-success" class="form-success"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== DESKTOP ENVIRONMENT ========== -->
+  <div id="desktop" class="screen">
+
+    <!-- Desktop Icons -->
+    <div id="desktop-icons">
+      <div class="desktop-icon" data-app="drive">
+        <span class="material-icons-round">cloud</span>
+        <span class="icon-label">Orbit Drive</span>
+      </div>
+      <div class="desktop-icon" data-app="notepad">
+        <span class="material-icons-round">edit_note</span>
+        <span class="icon-label">Bloco de Notas</span>
+      </div>
+      <div class="desktop-icon" data-app="calculator">
+        <span class="material-icons-round">calculate</span>
+        <span class="icon-label">Calculadora</span>
+      </div>
+      <div class="desktop-icon" data-app="kanban">
+        <span class="material-icons-round">view_kanban</span>
+        <span class="icon-label">Projetos</span>
+      </div>
+      <div class="desktop-icon" data-app="chat">
+        <span class="material-icons-round">forum</span>
+        <span class="icon-label">Team Chat</span>
+      </div>
+    </div>
+
+    <!-- ========== WINDOW MANAGER ========== -->
+    <div id="window-manager">
+
+      <!-- ORBIT DRIVE WINDOW -->
+      <div class="app-window" id="window-drive" data-app="drive">
+        <div class="window-header">
+          <div class="window-title">
+            <span class="material-icons-round">cloud</span>
+            Orbit Drive
+          </div>
+          <div class="window-controls">
+            <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
+            <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
+          </div>
+        </div>
+        <div class="window-body">
+          <div class="drive-toolbar">
+            <div class="drive-breadcrumb" id="drive-breadcrumb">
+              <span class="breadcrumb-item" data-path="/">Orbit Drive</span>
+            </div>
+            <div class="drive-actions">
+              <button class="btn-icon" id="btn-new-folder" title="Nova Pasta">
+                <span class="material-icons-round">create_new_folder</span>
+              </button>
+              <button class="btn-icon" id="btn-upload-file" title="Upload de Arquivo">
+                <span class="material-icons-round">upload_file</span>
+              </button>
+              <input type="file" id="file-upload-input" multiple hidden>
+              <button class="btn-icon" id="btn-view-toggle" title="Alternar visualiza&#231;&#227;o">
+                <span class="material-icons-round">grid_view</span>
+              </button>
+            </div>
+          </div>
+          <div class="drive-content" id="drive-content">
+            <div class="drive-empty">
+              <span class="material-icons-round">cloud_queue</span>
+              <p>Nenhum arquivo ainda. Fa&#231;a upload ou crie uma pasta!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTEPAD WINDOW -->
+      <div class="app-window" id="window-notepad" data-app="notepad">
+        <div class="window-header">
+          <div class="window-title">
+            <span class="material-icons-round">edit_note</span>
+            Bloco de Notas Pro
+          </div>
+          <div class="window-controls">
+            <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
+            <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
+          </div>
+        </div>
+        <div class="window-body">
+          <div class="notepad-toolbar">
+            <button class="btn-icon" data-cmd="bold" title="Negrito"><span class="material-icons-round">format_bold</span></button>
+            <button class="btn-icon" data-cmd="italic" title="It&#225;lico"><span class="material-icons-round">format_italic</span></button>
+            <button class="btn-icon" data-cmd="underline" title="Sublinhado"><span class="material-icons-round">format_underlined</span></button>
+            <button class="btn-icon" data-cmd="strikeThrough" title="Riscado"><span class="material-icons-round">strikethrough_s</span></button>
+            <div class="toolbar-separator"></div>
+            <button class="btn-icon" data-cmd="insertUnorderedList" title="Lista"><span class="material-icons-round">format_list_bulleted</span></button>
+            <button class="btn-icon" data-cmd="insertOrderedList" title="Lista Numerada"><span class="material-icons-round">format_list_numbered</span></button>
+            <div class="toolbar-separator"></div>
+            <button class="btn-icon" data-cmd="justifyLeft" title="Alinhar Esquerda"><span class="material-icons-round">format_align_left</span></button>
+            <button class="btn-icon" data-cmd="justifyCenter" title="Centralizar"><span class="material-icons-round">format_align_center</span></button>
+            <button class="btn-icon" data-cmd="justifyRight" title="Alinhar Direita"><span class="material-icons-round">format_align_right</span></button>
+            <div class="toolbar-separator"></div>
+            <select id="notepad-font-size" class="notepad-select" title="Tamanho da fonte">
+              <option value="1">Pequeno</option>
+              <option value="3" selected>Normal</option>
+              <option value="5">Grande</option>
+              <option value="7">Muito Grande</option>
+            </select>
+            <div class="toolbar-separator"></div>
+            <button class="btn-icon" id="notepad-export-txt" title="Exportar TXT"><span class="material-icons-round">description</span></button>
+            <button class="btn-icon" id="notepad-export-pdf" title="Exportar PDF"><span class="material-icons-round">picture_as_pdf</span></button>
+            <button class="btn-icon" id="notepad-export-png" title="Exportar PNG"><span class="material-icons-round">image</span></button>
+          </div>
+          <div class="notepad-editor" id="notepad-editor" contenteditable="true" spellcheck="true">
+            <p>Bem-vindo ao Bloco de Notas Pro do OrbitOS!</p>
+            <p>Comece a escrever aqui...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CALCULATOR WINDOW -->
+      <div class="app-window" id="window-calculator" data-app="calculator">
+        <div class="window-header">
+          <div class="window-title">
+            <span class="material-icons-round">calculate</span>
+            Calculadora Cient&#237;fica
+          </div>
+          <div class="window-controls">
+            <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
+            <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
+          </div>
+        </div>
+        <div class="window-body">
+          <div class="calc-container">
+            <div class="calc-tape" id="calc-tape">
+              <div class="tape-entry tape-info">Hist&#243;rico de opera&#231;&#245;es</div>
+            </div>
+            <div class="calc-display">
+              <div class="calc-expression" id="calc-expression"></div>
+              <div class="calc-result" id="calc-result">0</div>
+            </div>
+            <div class="calc-buttons">
+              <button class="calc-btn func" data-action="clear">AC</button>
+              <button class="calc-btn func" data-action="backspace"><span class="material-icons-round">backspace</span></button>
+              <button class="calc-btn func" data-action="percent">%</button>
+              <button class="calc-btn op" data-action="operator" data-value="/">&divide;</button>
+
+              <button class="calc-btn sci" data-action="func" data-value="sin">sin</button>
+              <button class="calc-btn num" data-action="number" data-value="7">7</button>
+              <button class="calc-btn num" data-action="number" data-value="8">8</button>
+              <button class="calc-btn num" data-action="number" data-value="9">9</button>
+              <button class="calc-btn op" data-action="operator" data-value="*">&times;</button>
+
+              <button class="calc-btn sci" data-action="func" data-value="cos">cos</button>
+              <button class="calc-btn num" data-action="number" data-value="4">4</button>
+              <button class="calc-btn num" data-action="number" data-value="5">5</button>
+              <button class="calc-btn num" data-action="number" data-value="6">6</button>
+              <button class="calc-btn op" data-action="operator" data-value="-">&minus;</button>
+
+              <button class="calc-btn sci" data-action="func" data-value="tan">tan</button>
+              <button class="calc-btn num" data-action="number" data-value="1">1</button>
+              <button class="calc-btn num" data-action="number" data-value="2">2</button>
+              <button class="calc-btn num" data-action="number" data-value="3">3</button>
+              <button class="calc-btn op" data-action="operator" data-value="+">+</button>
+
+              <button class="calc-btn sci" data-action="func" data-value="sqrt">&radic;</button>
+              <button class="calc-btn sci" data-action="func" data-value="pow">x&sup2;</button>
+              <button class="calc-btn num" data-action="number" data-value="0">0</button>
+              <button class="calc-btn num" data-action="decimal">.</button>
+              <button class="calc-btn eq" data-action="equals">=</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KANBAN WINDOW -->
+      <div class="app-window" id="window-kanban" data-app="kanban">
+        <div class="window-header">
+          <div class="window-title">
+            <span class="material-icons-round">view_kanban</span>
+            Gerenciador de Projetos
+          </div>
+          <div class="window-controls">
+            <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
+            <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
+          </div>
+        </div>
+        <div class="window-body">
+          <div class="kanban-board">
+            <div class="kanban-column" data-status="todo">
+              <div class="kanban-column-header">
+                <span class="kanban-dot dot-todo"></span>
+                A Fazer
+                <button class="btn-add-task" data-status="todo"><span class="material-icons-round">add</span></button>
+              </div>
+              <div class="kanban-cards" id="kanban-todo"></div>
+            </div>
+            <div class="kanban-column" data-status="doing">
+              <div class="kanban-column-header">
+                <span class="kanban-dot dot-doing"></span>
+                Fazendo
+                <button class="btn-add-task" data-status="doing"><span class="material-icons-round">add</span></button>
+              </div>
+              <div class="kanban-cards" id="kanban-doing"></div>
+            </div>
+            <div class="kanban-column" data-status="done">
+              <div class="kanban-column-header">
+                <span class="kanban-dot dot-done"></span>
+                Feito
+                <button class="btn-add-task" data-status="done"><span class="material-icons-round">add</span></button>
+              </div>
+              <div class="kanban-cards" id="kanban-done"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAT WINDOW -->
+      <div class="app-window" id="window-chat" data-app="chat">
+        <div class="window-header">
+          <div class="window-title">
+            <span class="material-icons-round">forum</span>
+            Team Chat &amp; Orbit Bot
+          </div>
+          <div class="window-controls">
+            <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
+            <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
+          </div>
+        </div>
+        <div class="window-body">
+          <div class="chat-sidebar">
+            <div class="chat-contact active" data-contact="orbit-bot">
+              <div class="contact-avatar bot-avatar">
+                <span class="material-icons-round">smart_toy</span>
+              </div>
+              <div class="contact-info">
+                <span class="contact-name">Orbit Bot</span>
+                <span class="contact-status">Online - IA Assistente</span>
+              </div>
+            </div>
+          </div>
+          <div class="chat-main">
+            <div class="chat-messages" id="chat-messages">
+              <div class="chat-message bot">
+                <div class="message-avatar"><span class="material-icons-round">smart_toy</span></div>
+                <div class="message-bubble">
+                  <p>Ol&#225;! Eu sou o <strong>Orbit Bot</strong>, seu assistente virtual.</p>
+                  <p>Digite <strong>"ajuda"</strong> para ver o que posso fazer!</p>
+                  <span class="message-time">Agora</span>
+                </div>
+              </div>
+            </div>
+            <div class="chat-input-area">
+              <input type="text" id="chat-input" placeholder="Digite sua mensagem..." autocomplete="off">
+              <button id="chat-send" class="btn-icon"><span class="material-icons-round">send</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /window-manager -->
+
+    <!-- ========== TASKBAR ========== -->
+    <div id="taskbar">
+      <div class="taskbar-start">
+        <button id="start-button" class="taskbar-btn">
+          <div class="orbit-mini-logo">
+            <div class="orbit-mini-ring"><div class="orbit-mini-core"></div></div>
+          </div>
+        </button>
+      </div>
+      <div class="taskbar-apps" id="taskbar-apps"></div>
+      <div class="taskbar-tray">
+        <span id="taskbar-user" class="tray-item"></span>
+        <span id="taskbar-clock" class="tray-item"></span>
+        <button id="btn-logout" class="tray-item logout-btn" title="Sair">
+          <span class="material-icons-round">logout</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Start Menu -->
+    <div id="start-menu" class="glass-panel hidden">
+      <div class="start-menu-header">
+        <h3>OrbitOS</h3>
+        <p id="start-menu-user"></p>
+      </div>
+      <div class="start-menu-apps">
+        <button class="start-app" data-app="drive">
+          <span class="material-icons-round">cloud</span>
+          <span>Orbit Drive</span>
+        </button>
+        <button class="start-app" data-app="notepad">
+          <span class="material-icons-round">edit_note</span>
+          <span>Bloco de Notas</span>
+        </button>
+        <button class="start-app" data-app="calculator">
+          <span class="material-icons-round">calculate</span>
+          <span>Calculadora</span>
+        </button>
+        <button class="start-app" data-app="kanban">
+          <span class="material-icons-round">view_kanban</span>
+          <span>Projetos</span>
+        </button>
+        <button class="start-app" data-app="chat">
+          <span class="material-icons-round">forum</span>
+          <span>Team Chat</span>
+        </button>
+      </div>
+      <div class="start-menu-footer">
+        <button id="start-logout">
+          <span class="material-icons-round">power_settings_new</span>
+          <span>Desligar</span>
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /desktop -->
+
+  <!-- ========== FILE PREVIEW MODAL ========== -->
+  <div id="preview-modal" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content glass-panel">
+      <div class="modal-header">
+        <span id="preview-title">Visualizar Arquivo</span>
+        <button class="modal-close"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="modal-body" id="preview-body"></div>
+    </div>
+  </div>
+
+  <!-- ========== PROMPT MODAL (for folder names, task names, etc.) ========== -->
+  <div id="prompt-modal" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content glass-panel prompt-modal-content">
+      <div class="modal-header">
+        <span id="prompt-title">Entrada</span>
+        <button class="modal-close"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="prompt-input" class="prompt-input" placeholder="">
+        <div class="prompt-actions">
+          <button id="prompt-cancel" class="btn-secondary">Cancelar</button>
+          <button id="prompt-ok" class="btn-primary">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div id="context-menu" class="context-menu hidden">
+    <button class="ctx-item" data-action="open"><span class="material-icons-round">open_in_new</span> Abrir</button>
+    <button class="ctx-item" data-action="rename"><span class="material-icons-round">edit</span> Renomear</button>
+    <button class="ctx-item" data-action="delete"><span class="material-icons-round">delete</span> Excluir</button>
+  </div>
+
+  <script src="js/system.js"></script>
+  <script src="js/apps.js"></script>
+</body>
+</html>
