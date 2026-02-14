@@ -19,12 +19,21 @@
 </head>
 <body>
 
+  <!-- Animated Star Background -->
+  <canvas id="bg-canvas"></canvas>
+
   <!-- ========== LOGIN SCREEN ========== -->
   <div id="login-screen" class="screen active">
     <div class="login-container">
       <div class="login-logo">
-        <div class="orbit-ring">
-          <div class="orbit-core"></div>
+        <div class="orbit-logo-wrapper">
+          <div class="orbit-ring">
+            <div class="orbit-core"></div>
+          </div>
+          <div class="orbit-ring-inner"></div>
+          <div class="orbit-particle"></div>
+          <div class="orbit-particle"></div>
+          <div class="orbit-particle"></div>
         </div>
         <h1>OrbitOS</h1>
         <p class="login-subtitle">Seu sistema operacional na nuvem pessoal</p>
@@ -75,26 +84,26 @@
   <!-- ========== DESKTOP ENVIRONMENT ========== -->
   <div id="desktop" class="screen">
 
-    <!-- Desktop Icons -->
+    <!-- Desktop Icons with gradient backgrounds -->
     <div id="desktop-icons">
       <div class="desktop-icon" data-app="drive">
-        <span class="material-icons-round">cloud</span>
+        <div class="icon-bg"><span class="material-icons-round">cloud</span></div>
         <span class="icon-label">Orbit Drive</span>
       </div>
       <div class="desktop-icon" data-app="notepad">
-        <span class="material-icons-round">edit_note</span>
+        <div class="icon-bg"><span class="material-icons-round">edit_note</span></div>
         <span class="icon-label">Bloco de Notas</span>
       </div>
       <div class="desktop-icon" data-app="calculator">
-        <span class="material-icons-round">calculate</span>
+        <div class="icon-bg"><span class="material-icons-round">calculate</span></div>
         <span class="icon-label">Calculadora</span>
       </div>
       <div class="desktop-icon" data-app="kanban">
-        <span class="material-icons-round">view_kanban</span>
+        <div class="icon-bg"><span class="material-icons-round">view_kanban</span></div>
         <span class="icon-label">Projetos</span>
       </div>
       <div class="desktop-icon" data-app="chat">
-        <span class="material-icons-round">forum</span>
+        <div class="icon-bg"><span class="material-icons-round">forum</span></div>
         <span class="icon-label">Team Chat</span>
       </div>
     </div>
@@ -110,9 +119,9 @@
             Orbit Drive
           </div>
           <div class="window-controls">
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
             <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
             <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
-            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
           </div>
         </div>
         <div class="window-body">
@@ -150,9 +159,9 @@
             Bloco de Notas Pro
           </div>
           <div class="window-controls">
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
             <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
             <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
-            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
           </div>
         </div>
         <div class="window-body">
@@ -195,9 +204,9 @@
             Calculadora Cient&#237;fica
           </div>
           <div class="window-controls">
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
             <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
             <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
-            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
           </div>
         </div>
         <div class="window-body">
@@ -251,9 +260,9 @@
             Gerenciador de Projetos
           </div>
           <div class="window-controls">
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
             <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
             <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
-            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
           </div>
         </div>
         <div class="window-body">
@@ -294,9 +303,9 @@
             Team Chat &amp; Orbit Bot
           </div>
           <div class="window-controls">
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
             <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
             <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
-            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
           </div>
         </div>
         <div class="window-body">
@@ -307,7 +316,7 @@
               </div>
               <div class="contact-info">
                 <span class="contact-name">Orbit Bot</span>
-                <span class="contact-status">Online - IA Assistente</span>
+                <span class="contact-status">Online</span>
               </div>
             </div>
           </div>
@@ -343,9 +352,12 @@
       </div>
       <div class="taskbar-apps" id="taskbar-apps"></div>
       <div class="taskbar-tray">
-        <span id="taskbar-user" class="tray-item"></span>
-        <span id="taskbar-clock" class="tray-item"></span>
-        <button id="btn-logout" class="tray-item logout-btn" title="Sair">
+        <div class="taskbar-user-badge">
+          <span class="material-icons-round">person</span>
+          <span id="taskbar-user"></span>
+        </div>
+        <span id="taskbar-clock" class="taskbar-clock"></span>
+        <button id="btn-logout" class="logout-btn" title="Sair">
           <span class="material-icons-round">logout</span>
         </button>
       </div>
@@ -359,23 +371,23 @@
       </div>
       <div class="start-menu-apps">
         <button class="start-app" data-app="drive">
-          <span class="material-icons-round">cloud</span>
+          <div class="app-icon-mini"><span class="material-icons-round">cloud</span></div>
           <span>Orbit Drive</span>
         </button>
         <button class="start-app" data-app="notepad">
-          <span class="material-icons-round">edit_note</span>
+          <div class="app-icon-mini"><span class="material-icons-round">edit_note</span></div>
           <span>Bloco de Notas</span>
         </button>
         <button class="start-app" data-app="calculator">
-          <span class="material-icons-round">calculate</span>
+          <div class="app-icon-mini"><span class="material-icons-round">calculate</span></div>
           <span>Calculadora</span>
         </button>
         <button class="start-app" data-app="kanban">
-          <span class="material-icons-round">view_kanban</span>
+          <div class="app-icon-mini"><span class="material-icons-round">view_kanban</span></div>
           <span>Projetos</span>
         </button>
         <button class="start-app" data-app="chat">
-          <span class="material-icons-round">forum</span>
+          <div class="app-icon-mini"><span class="material-icons-round">forum</span></div>
           <span>Team Chat</span>
         </button>
       </div>
@@ -401,7 +413,7 @@
     </div>
   </div>
 
-  <!-- ========== PROMPT MODAL (for folder names, task names, etc.) ========== -->
+  <!-- ========== PROMPT MODAL ========== -->
   <div id="prompt-modal" class="modal hidden">
     <div class="modal-overlay"></div>
     <div class="modal-content glass-panel prompt-modal-content">
@@ -428,5 +440,6 @@
 
   <script src="js/system.js"></script>
   <script src="js/apps.js"></script>
+  <script src="js/particles.js"></script>
 </body>
 </html>

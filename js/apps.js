@@ -724,11 +724,13 @@ const ChatApp = {
       this.addMessage(text, 'user');
       input.value = '';
 
-      // Simulate typing delay
+      // Show typing indicator then respond
+      this.showTyping();
       setTimeout(() => {
+        this.hideTyping();
         const response = this.getResponse(text);
         this.addMessage(response, 'bot');
-      }, 400 + Math.random() * 600);
+      }, 600 + Math.random() * 800);
     };
 
     sendBtn.addEventListener('click', send);
@@ -768,6 +770,33 @@ const ChatApp = {
 
     container.appendChild(msg);
     container.scrollTop = container.scrollHeight;
+  },
+
+  showTyping() {
+    const container = document.getElementById('chat-messages');
+    const existing = container.querySelector('.typing-indicator-msg');
+    if (existing) return;
+
+    const msg = document.createElement('div');
+    msg.className = 'chat-message bot typing-indicator-msg';
+    msg.innerHTML = `
+      <div class="message-avatar"><span class="material-icons-round">smart_toy</span></div>
+      <div class="message-bubble">
+        <div class="typing-indicator">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+      </div>
+    `;
+    container.appendChild(msg);
+    container.scrollTop = container.scrollHeight;
+  },
+
+  hideTyping() {
+    const container = document.getElementById('chat-messages');
+    const el = container.querySelector('.typing-indicator-msg');
+    if (el) el.remove();
   },
 
   escapeHtml(str) {
