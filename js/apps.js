@@ -9,7 +9,12 @@ const AppCallbacks = {
   kanban: () => KanbanApp.init(),
   chat: () => {},
   notepad: () => {},
-  calculator: () => {}
+  calculator: () => {},
+  sheets: () => SheetsApp.init(),
+  slides: () => SlidesApp.init(),
+  paint: () => PaintApp.init(),
+  calendar: () => CalendarApp.init(),
+  pomodoro: () => PomodoroApp.init()
 };
 
 /* ============================================
@@ -1097,6 +1102,1004 @@ const ChatApp = {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+};
+
+
+/* ============================================
+   6. ORBIT SHEETS (Spreadsheet)
+   ============================================ */
+const SheetsApp = {
+  initialized: false,
+  rows: 30,
+  cols: 10,
+  data: {},       // { "A1": "=SUM(A2:A5)", ... }
+  computed: {},   // { "A1": 123, ... }
+  selectedCell: null,
+
+  init() {
+    if (this.initialized) return;
+    this.initialized = true;
+
+    this.buildTable();
+
+    // Formula bar
+    const formulaBar = document.getElementById('sheets-formula-bar');
+    formulaBar.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (this.selectedCell) {
+          this.data[this.selectedCell] = formulaBar.value;
+          this.recalcAll();
+          // Move down
+          const col = this.selectedCell.match(/[A-Z]+/)[0];
+          const row = parseInt(this.selectedCell.match(/\d+/)[0]) + 1;
+          if (row <= this.rows) this.selectCell(col + row);
+        }
+      }
+    });
+
+    // Export CSV
+    document.getElementById('sheets-export-csv').addEventListener('click', () => this.exportCSV());
+
+    // Save to Drive
+    document.getElementById('sheets-save-drive').addEventListener('click', () => this.saveToDrive());
+  },
+
+  buildTable() {
+    const table = document.getElementById('sheets-table');
+    const colLetters = [];
+    for (let c = 0; c < this.cols; c++) {
+      colLetters.push(String.fromCharCode(65 + c));
+    }
+
+    let html = '<thead><tr><th></th>';
+    colLetters.forEach(l => { html += `<th>${l}</th>`; });
+    html += '</tr></thead><tbody>';
+
+    for (let r = 1; r <= this.rows; r++) {
+      html += `<tr><th>${r}</th>`;
+      colLetters.forEach(l => {
+        const cellId = l + r;
+        html += `<td data-cell="${cellId}"><input type="text" data-cell="${cellId}"></td>`;
+      });
+      html += '</tr>';
+    }
+    html += '</tbody>';
+    table.innerHTML = html;
+
+    // Attach cell events
+    table.querySelectorAll('td input').forEach(input => {
+      input.addEventListener('focus', () => {
+        this.selectCell(input.dataset.cell);
+        const formulaBar = document.getElementById('sheets-formula-bar');
+        formulaBar.value = this.data[input.dataset.cell] || '';
+      });
+      input.addEventListener('blur', () => {
+        const cellId = input.dataset.cell;
+        this.data[cellId] = input.value;
+        this.recalcAll();
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const cellId = input.dataset.cell;
+          this.data[cellId] = input.value;
+          this.recalcAll();
+          // Move down
+          const col = cellId.match(/[A-Z]+/)[0];
+          const row = parseInt(cellId.match(/\d+/)[0]) + 1;
+          if (row <= this.rows) this.selectCell(col + row);
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          const cellId = input.dataset.cell;
+          this.data[cellId] = input.value;
+          this.recalcAll();
+          // Move right
+          const col = cellId.match(/[A-Z]+/)[0];
+          const row = parseInt(cellId.match(/\d+/)[0]);
+          const nextColIdx = col.charCodeAt(0) - 65 + 1;
+          if (nextColIdx < this.cols) {
+            this.selectCell(String.fromCharCode(65 + nextColIdx) + row);
+          }
+        }
+      });
+    });
+  },
+
+  selectCell(cellId) {
+    // Remove previous selection
+    document.querySelectorAll('.sheets-table td.selected').forEach(td => td.classList.remove('selected'));
+
+    this.selectedCell = cellId;
+    document.getElementById('sheets-cell-ref').textContent = cellId;
+
+    const td = document.querySelector(`.sheets-table td[data-cell="${cellId}"]`);
+    if (td) {
+      td.classList.add('selected');
+      const input = td.querySelector('input');
+      if (input) {
+        input.focus();
+        input.value = this.data[cellId] || '';
+      }
+    }
+
+    const formulaBar = document.getElementById('sheets-formula-bar');
+    formulaBar.value = this.data[cellId] || '';
+  },
+
+  recalcAll() {
+    this.computed = {};
+    Object.keys(this.data).forEach(cellId => {
+      this.computed[cellId] = this.evaluate(this.data[cellId]);
+    });
+
+    // Update display
+    document.querySelectorAll('.sheets-table td input').forEach(input => {
+      const cellId = input.dataset.cell;
+      const raw = this.data[cellId];
+      if (raw && raw.startsWith('=')) {
+        input.value = this.computed[cellId] !== undefined ? this.computed[cellId] : raw;
+      } else {
+        input.value = raw || '';
+      }
+    });
+  },
+
+  evaluate(value) {
+    if (!value) return '';
+    if (typeof value !== 'string') return value;
+    if (!value.startsWith('=')) {
+      const num = parseFloat(value);
+      return isNaN(num) ? value : num;
+    }
+
+    const formula = value.substring(1).toUpperCase();
+    try {
+      // Handle SUM(range)
+      const sumMatch = formula.match(/^SUM\(([A-Z]+\d+):([A-Z]+\d+)\)$/);
+      if (sumMatch) return this.rangeReduce(sumMatch[1], sumMatch[2], (a, b) => a + b, 0);
+
+      // Handle AVG/AVERAGE(range)
+      const avgMatch = formula.match(/^(?:AVG|AVERAGE)\(([A-Z]+\d+):([A-Z]+\d+)\)$/);
+      if (avgMatch) {
+        const vals = this.getRangeValues(avgMatch[1], avgMatch[2]);
+        const nums = vals.filter(v => typeof v === 'number');
+        return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
+      }
+
+      // Handle MIN(range)
+      const minMatch = formula.match(/^MIN\(([A-Z]+\d+):([A-Z]+\d+)\)$/);
+      if (minMatch) {
+        const vals = this.getRangeValues(minMatch[1], minMatch[2]).filter(v => typeof v === 'number');
+        return vals.length ? Math.min(...vals) : 0;
+      }
+
+      // Handle MAX(range)
+      const maxMatch = formula.match(/^MAX\(([A-Z]+\d+):([A-Z]+\d+)\)$/);
+      if (maxMatch) {
+        const vals = this.getRangeValues(maxMatch[1], maxMatch[2]).filter(v => typeof v === 'number');
+        return vals.length ? Math.max(...vals) : 0;
+      }
+
+      // Handle COUNT(range)
+      const countMatch = formula.match(/^COUNT\(([A-Z]+\d+):([A-Z]+\d+)\)$/);
+      if (countMatch) {
+        return this.getRangeValues(countMatch[1], countMatch[2]).filter(v => typeof v === 'number').length;
+      }
+
+      // Simple cell references and math
+      let expr = formula.replace(/[A-Z]+\d+/g, (ref) => {
+        const val = this.getCellValue(ref);
+        return typeof val === 'number' ? val : 0;
+      });
+      const sanitized = expr.replace(/[^0-9\+\-\*\/\.\(\)]/g, '');
+      return new Function('return ' + sanitized)();
+    } catch {
+      return '#ERR';
+    }
+  },
+
+  getCellValue(cellId) {
+    const raw = this.data[cellId];
+    if (!raw) return 0;
+    if (typeof raw === 'string' && raw.startsWith('=')) {
+      return this.evaluate(raw);
+    }
+    const num = parseFloat(raw);
+    return isNaN(num) ? raw : num;
+  },
+
+  getRangeValues(start, end) {
+    const startCol = start.match(/[A-Z]+/)[0].charCodeAt(0);
+    const startRow = parseInt(start.match(/\d+/)[0]);
+    const endCol = end.match(/[A-Z]+/)[0].charCodeAt(0);
+    const endRow = parseInt(end.match(/\d+/)[0]);
+    const values = [];
+    for (let c = startCol; c <= endCol; c++) {
+      for (let r = startRow; r <= endRow; r++) {
+        values.push(this.getCellValue(String.fromCharCode(c) + r));
+      }
+    }
+    return values;
+  },
+
+  rangeReduce(start, end, fn, initial) {
+    const values = this.getRangeValues(start, end).filter(v => typeof v === 'number');
+    return values.reduce(fn, initial);
+  },
+
+  exportCSV() {
+    const colLetters = [];
+    for (let c = 0; c < this.cols; c++) colLetters.push(String.fromCharCode(65 + c));
+
+    let csv = colLetters.join(',') + '\n';
+    for (let r = 1; r <= this.rows; r++) {
+      const row = colLetters.map(l => {
+        const cellId = l + r;
+        const val = this.computed[cellId] !== undefined ? this.computed[cellId] : (this.data[cellId] || '');
+        const str = String(val);
+        return str.includes(',') ? `"${str}"` : str;
+      });
+      csv += row.join(',') + '\n';
+    }
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'orbit-sheets.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  async saveToDrive() {
+    const name = await showPrompt('Salvar no Drive', 'Nome da planilha');
+    if (!name) return;
+    const fileName = name.endsWith('.csv') ? name : name + '.csv';
+
+    const colLetters = [];
+    for (let c = 0; c < this.cols; c++) colLetters.push(String.fromCharCode(65 + c));
+
+    let csv = colLetters.join(',') + '\n';
+    for (let r = 1; r <= this.rows; r++) {
+      const row = colLetters.map(l => {
+        const cellId = l + r;
+        const val = this.computed[cellId] !== undefined ? this.computed[cellId] : (this.data[cellId] || '');
+        const str = String(val);
+        return str.includes(',') ? `"${str}"` : str;
+      });
+      csv += row.join(',') + '\n';
+    }
+
+    const base64 = 'data:text/csv;base64,' + btoa(unescape(encodeURIComponent(csv)));
+    await db.files.add({
+      name: fileName,
+      parentId: DriveApp.getParentId(),
+      type: 'file',
+      mimeType: 'text/csv',
+      blob: base64,
+      createdAt: Date.now()
+    });
+
+    const btn = document.getElementById('sheets-save-drive');
+    const icon = btn.querySelector('.material-icons-round');
+    icon.textContent = 'check_circle';
+    btn.style.color = 'var(--emerald)';
+    setTimeout(() => { icon.textContent = 'cloud_upload'; btn.style.color = ''; }, 2000);
+  }
+};
+
+
+/* ============================================
+   7. ORBIT SLIDES (Presentations)
+   ============================================ */
+const SlidesApp = {
+  initialized: false,
+  slides: [],
+  currentSlide: 0,
+
+  init() {
+    if (this.initialized) {
+      this.renderPanel();
+      return;
+    }
+    this.initialized = true;
+
+    // Start with one slide
+    this.slides = [
+      { content: '<h1>Clique para editar o título</h1><p>Subtítulo da apresentação</p>', bg: '#1a1a2e' }
+    ];
+
+    this.renderPanel();
+    this.loadSlide(0);
+
+    // Add slide
+    document.getElementById('slides-add').addEventListener('click', () => {
+      this.slides.push({ content: '<h1>Novo Slide</h1><p>Conteúdo aqui</p>', bg: '#1a1a2e' });
+      this.currentSlide = this.slides.length - 1;
+      this.renderPanel();
+      this.loadSlide(this.currentSlide);
+    });
+
+    // Delete slide
+    document.getElementById('slides-delete').addEventListener('click', () => {
+      if (this.slides.length <= 1) return;
+      this.slides.splice(this.currentSlide, 1);
+      if (this.currentSlide >= this.slides.length) this.currentSlide = this.slides.length - 1;
+      this.renderPanel();
+      this.loadSlide(this.currentSlide);
+    });
+
+    // Background color
+    document.getElementById('slides-bg-color').addEventListener('change', (e) => {
+      this.slides[this.currentSlide].bg = e.target.value;
+      document.getElementById('slides-canvas').style.backgroundColor = e.target.value;
+      this.renderPanel();
+    });
+
+    // Save canvas content on blur
+    document.getElementById('slides-canvas').addEventListener('blur', () => {
+      this.saveCurrentSlide();
+    });
+
+    // Present mode
+    document.getElementById('slides-present').addEventListener('click', () => this.startPresentation());
+
+    // Save to Drive
+    document.getElementById('slides-save-drive').addEventListener('click', () => this.saveToDrive());
+  },
+
+  saveCurrentSlide() {
+    const canvas = document.getElementById('slides-canvas');
+    this.slides[this.currentSlide].content = canvas.innerHTML;
+    this.renderPanel();
+  },
+
+  loadSlide(index) {
+    this.currentSlide = index;
+    const slide = this.slides[index];
+    const canvas = document.getElementById('slides-canvas');
+    canvas.innerHTML = slide.content;
+    canvas.style.backgroundColor = slide.bg;
+
+    // Update bg select
+    const bgSelect = document.getElementById('slides-bg-color');
+    bgSelect.value = slide.bg;
+
+    this.highlightThumb(index);
+  },
+
+  renderPanel() {
+    const panel = document.getElementById('slides-panel');
+    panel.innerHTML = this.slides.map((slide, i) => {
+      const preview = slide.content.replace(/<[^>]+>/g, ' ').substring(0, 30);
+      return `<div class="slide-thumb ${i === this.currentSlide ? 'active' : ''}" data-index="${i}" style="background:${slide.bg}">
+        <span class="slide-thumb-number">${i + 1}</span>
+        ${preview || 'Vazio'}
+      </div>`;
+    }).join('');
+
+    panel.querySelectorAll('.slide-thumb').forEach(thumb => {
+      thumb.addEventListener('click', () => {
+        this.saveCurrentSlide();
+        this.loadSlide(parseInt(thumb.dataset.index));
+      });
+    });
+  },
+
+  highlightThumb(index) {
+    document.querySelectorAll('.slide-thumb').forEach((t, i) => {
+      t.classList.toggle('active', i === index);
+    });
+  },
+
+  startPresentation() {
+    this.saveCurrentSlide();
+    let presentIndex = 0;
+    const overlay = document.createElement('div');
+    overlay.className = 'slides-fullscreen';
+
+    const canvas = document.createElement('div');
+    canvas.className = 'slides-canvas';
+    canvas.style.backgroundColor = this.slides[presentIndex].bg;
+    canvas.innerHTML = this.slides[presentIndex].content;
+    overlay.appendChild(canvas);
+    document.body.appendChild(overlay);
+
+    const navigate = (dir) => {
+      presentIndex += dir;
+      if (presentIndex < 0) presentIndex = 0;
+      if (presentIndex >= this.slides.length) {
+        overlay.remove();
+        document.removeEventListener('keydown', keyHandler);
+        return;
+      }
+      canvas.innerHTML = this.slides[presentIndex].content;
+      canvas.style.backgroundColor = this.slides[presentIndex].bg;
+    };
+
+    const keyHandler = (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') navigate(1);
+      else if (e.key === 'ArrowLeft') navigate(-1);
+      else if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', keyHandler); }
+    };
+    document.addEventListener('keydown', keyHandler);
+    overlay.addEventListener('click', () => navigate(1));
+  },
+
+  async saveToDrive() {
+    this.saveCurrentSlide();
+    const name = await showPrompt('Salvar no Drive', 'Nome da apresentação');
+    if (!name) return;
+    const fileName = name.endsWith('.html') ? name : name + '.html';
+
+    let html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + fileName + '</title>';
+    html += '<style>body{margin:0;font-family:Inter,sans-serif;}.slide{width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px;color:#fff;} h1{font-size:3rem;margin-bottom:16px;} p{font-size:1.4rem;opacity:0.7;}</style>';
+    html += '</head><body>';
+    this.slides.forEach(slide => {
+      html += `<div class="slide" style="background:${slide.bg}">${slide.content}</div>`;
+    });
+    html += '</body></html>';
+
+    const base64 = 'data:text/html;base64,' + btoa(unescape(encodeURIComponent(html)));
+    await db.files.add({
+      name: fileName,
+      parentId: DriveApp.getParentId(),
+      type: 'file',
+      mimeType: 'text/html',
+      blob: base64,
+      createdAt: Date.now()
+    });
+
+    const btn = document.getElementById('slides-save-drive');
+    const icon = btn.querySelector('.material-icons-round');
+    icon.textContent = 'check_circle';
+    btn.style.color = 'var(--emerald)';
+    setTimeout(() => { icon.textContent = 'cloud_upload'; btn.style.color = ''; }, 2000);
+  }
+};
+
+
+/* ============================================
+   8. ORBIT PAINT (Drawing Canvas)
+   ============================================ */
+const PaintApp = {
+  initialized: false,
+  canvas: null,
+  ctx: null,
+  isDrawing: false,
+  currentTool: 'brush',
+  color: '#a78bfa',
+  size: 4,
+  history: [],
+  startX: 0,
+  startY: 0,
+  snapshot: null,
+
+  init() {
+    if (this.initialized) {
+      this.resizeCanvas();
+      return;
+    }
+    this.initialized = true;
+
+    this.canvas = document.getElementById('paint-canvas');
+    this.ctx = this.canvas.getContext('2d');
+
+    this.resizeCanvas();
+
+    // Tool buttons
+    document.querySelectorAll('.paint-tool').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.paint-tool').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.currentTool = btn.dataset.tool;
+      });
+    });
+
+    // Color
+    document.getElementById('paint-color').addEventListener('input', (e) => {
+      this.color = e.target.value;
+    });
+
+    // Size
+    const sizeSlider = document.getElementById('paint-size');
+    sizeSlider.addEventListener('input', (e) => {
+      this.size = parseInt(e.target.value);
+      document.getElementById('paint-size-label').textContent = this.size + 'px';
+    });
+
+    // Clear
+    document.getElementById('paint-clear').addEventListener('click', () => {
+      this.ctx.fillStyle = '#fff';
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      this.saveHistory();
+    });
+
+    // Undo
+    document.getElementById('paint-undo').addEventListener('click', () => {
+      if (this.history.length > 1) {
+        this.history.pop();
+        const img = new Image();
+        img.onload = () => {
+          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+          this.ctx.drawImage(img, 0, 0);
+        };
+        img.src = this.history[this.history.length - 1];
+      }
+    });
+
+    // Export PNG
+    document.getElementById('paint-export-png').addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = 'orbit-paint.png';
+      link.href = this.canvas.toDataURL();
+      link.click();
+    });
+
+    // Save to Drive
+    document.getElementById('paint-save-drive').addEventListener('click', () => this.saveToDrive());
+
+    // Drawing events — mouse
+    this.canvas.addEventListener('mousedown', (e) => this.onPointerDown(e.offsetX, e.offsetY));
+    this.canvas.addEventListener('mousemove', (e) => this.onPointerMove(e.offsetX, e.offsetY));
+    this.canvas.addEventListener('mouseup', () => this.onPointerUp());
+    this.canvas.addEventListener('mouseleave', () => this.onPointerUp());
+
+    // Drawing events — touch
+    this.canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const rect = this.canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      this.onPointerDown(
+        (touch.clientX - rect.left) * (this.canvas.width / rect.width),
+        (touch.clientY - rect.top) * (this.canvas.height / rect.height)
+      );
+    });
+    this.canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const rect = this.canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      this.onPointerMove(
+        (touch.clientX - rect.left) * (this.canvas.width / rect.width),
+        (touch.clientY - rect.top) * (this.canvas.height / rect.height)
+      );
+    });
+    this.canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      this.onPointerUp();
+    });
+
+    // Resize observer
+    const wrap = this.canvas.parentElement;
+    new ResizeObserver(() => this.resizeCanvas()).observe(wrap);
+
+    // Initial white bg
+    this.ctx.fillStyle = '#fff';
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.saveHistory();
+  },
+
+  resizeCanvas() {
+    if (!this.canvas) return;
+    const wrap = this.canvas.parentElement;
+    const prevData = this.canvas.toDataURL();
+    this.canvas.width = wrap.clientWidth;
+    this.canvas.height = wrap.clientHeight;
+
+    // Restore content
+    if (this.history.length > 0) {
+      const img = new Image();
+      img.onload = () => this.ctx.drawImage(img, 0, 0);
+      img.src = prevData;
+    } else {
+      this.ctx.fillStyle = '#fff';
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+  },
+
+  onPointerDown(x, y) {
+    this.isDrawing = true;
+    this.startX = x;
+    this.startY = y;
+
+    if (this.currentTool === 'brush' || this.currentTool === 'eraser') {
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, y);
+    }
+
+    // Save snapshot for shape tools
+    if (['line', 'rect', 'circle'].includes(this.currentTool)) {
+      this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    }
+  },
+
+  onPointerMove(x, y) {
+    if (!this.isDrawing) return;
+
+    if (this.currentTool === 'brush') {
+      this.ctx.strokeStyle = this.color;
+      this.ctx.lineWidth = this.size;
+      this.ctx.lineCap = 'round';
+      this.ctx.lineJoin = 'round';
+      this.ctx.lineTo(x, y);
+      this.ctx.stroke();
+    } else if (this.currentTool === 'eraser') {
+      this.ctx.strokeStyle = '#ffffff';
+      this.ctx.lineWidth = this.size * 3;
+      this.ctx.lineCap = 'round';
+      this.ctx.lineJoin = 'round';
+      this.ctx.lineTo(x, y);
+      this.ctx.stroke();
+    } else if (this.currentTool === 'line') {
+      this.ctx.putImageData(this.snapshot, 0, 0);
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.startX, this.startY);
+      this.ctx.lineTo(x, y);
+      this.ctx.strokeStyle = this.color;
+      this.ctx.lineWidth = this.size;
+      this.ctx.lineCap = 'round';
+      this.ctx.stroke();
+    } else if (this.currentTool === 'rect') {
+      this.ctx.putImageData(this.snapshot, 0, 0);
+      this.ctx.beginPath();
+      this.ctx.rect(this.startX, this.startY, x - this.startX, y - this.startY);
+      this.ctx.strokeStyle = this.color;
+      this.ctx.lineWidth = this.size;
+      this.ctx.stroke();
+    } else if (this.currentTool === 'circle') {
+      this.ctx.putImageData(this.snapshot, 0, 0);
+      const rx = Math.abs(x - this.startX) / 2;
+      const ry = Math.abs(y - this.startY) / 2;
+      const cx = this.startX + (x - this.startX) / 2;
+      const cy = this.startY + (y - this.startY) / 2;
+      this.ctx.beginPath();
+      this.ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      this.ctx.strokeStyle = this.color;
+      this.ctx.lineWidth = this.size;
+      this.ctx.stroke();
+    }
+  },
+
+  onPointerUp() {
+    if (!this.isDrawing) return;
+    this.isDrawing = false;
+    this.ctx.beginPath();
+    this.saveHistory();
+  },
+
+  saveHistory() {
+    if (this.history.length > 30) this.history.shift();
+    this.history.push(this.canvas.toDataURL());
+  },
+
+  async saveToDrive() {
+    const name = await showPrompt('Salvar no Drive', 'Nome do desenho');
+    if (!name) return;
+    const fileName = name.endsWith('.png') ? name : name + '.png';
+    const dataUrl = this.canvas.toDataURL('image/png');
+
+    await db.files.add({
+      name: fileName,
+      parentId: DriveApp.getParentId(),
+      type: 'file',
+      mimeType: 'image/png',
+      blob: dataUrl,
+      createdAt: Date.now()
+    });
+
+    const btn = document.getElementById('paint-save-drive');
+    const icon = btn.querySelector('.material-icons-round');
+    icon.textContent = 'check_circle';
+    btn.style.color = 'var(--emerald)';
+    setTimeout(() => { icon.textContent = 'cloud_upload'; btn.style.color = ''; }, 2000);
+  }
+};
+
+
+/* ============================================
+   9. ORBIT CALENDAR
+   ============================================ */
+const CalendarApp = {
+  initialized: false,
+  currentDate: new Date(),
+  events: [],
+
+  init() {
+    if (this.initialized) {
+      this.loadEvents();
+      return;
+    }
+    this.initialized = true;
+
+    // Navigation
+    document.getElementById('cal-prev').addEventListener('click', () => {
+      this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+      this.loadEvents();
+    });
+    document.getElementById('cal-next').addEventListener('click', () => {
+      this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+      this.loadEvents();
+    });
+    document.getElementById('cal-today').addEventListener('click', () => {
+      this.currentDate = new Date();
+      this.loadEvents();
+    });
+
+    this.loadEvents();
+  },
+
+  async loadEvents() {
+    this.events = await db.calendarEvents.toArray();
+    this.render();
+  },
+
+  render() {
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+
+    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    document.getElementById('cal-title').textContent = `${meses[month]} ${year}`;
+
+    const grid = document.getElementById('calendar-grid');
+    const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+    let html = dias.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
+
+    const today = new Date();
+    const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+
+    // Previous month padding
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const day = prevMonthDays - i;
+      html += `<div class="cal-day other-month"><span class="cal-day-number">${day}</span></div>`;
+    }
+
+    // Current month days
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const isToday = isCurrentMonth && today.getDate() === d;
+      const dayEvents = this.events.filter(e => e.date === dateStr);
+
+      let eventDots = '';
+      if (dayEvents.length > 0) {
+        eventDots = '<div class="cal-events">' +
+          dayEvents.map(e => `<div class="cal-event-dot" style="background:${e.color || '#6366f1'}" title="${this.escapeHtml(e.title)}"></div>`).join('') +
+          '</div>';
+      }
+
+      html += `<div class="cal-day ${isToday ? 'today' : ''}" data-date="${dateStr}">
+        <span class="cal-day-number">${d}</span>
+        ${eventDots}
+      </div>`;
+    }
+
+    // Next month padding
+    const totalCells = firstDay + daysInMonth;
+    const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+    for (let i = 1; i <= remaining; i++) {
+      html += `<div class="cal-day other-month"><span class="cal-day-number">${i}</span></div>`;
+    }
+
+    grid.innerHTML = html;
+
+    // Click to add event
+    grid.querySelectorAll('.cal-day:not(.other-month)').forEach(dayEl => {
+      dayEl.addEventListener('click', async () => {
+        const date = dayEl.dataset.date;
+        const title = await showPrompt('Novo Evento', 'Título do evento');
+        if (!title) return;
+
+        const colors = ['#6366f1', '#22c55e', '#ef4444', '#f97316', '#ec4899', '#38bdf8'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+
+        await db.calendarEvents.add({
+          title,
+          date,
+          color,
+          createdAt: Date.now()
+        });
+
+        this.loadEvents();
+      });
+
+      // Long press / right-click to view/delete events
+      dayEl.addEventListener('contextmenu', async (e) => {
+        e.preventDefault();
+        const date = dayEl.dataset.date;
+        const dayEvents = this.events.filter(ev => ev.date === date);
+        if (dayEvents.length === 0) return;
+
+        const listHtml = dayEvents.map(ev =>
+          `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+            <div style="width:10px;height:10px;border-radius:50%;background:${ev.color};flex-shrink:0;"></div>
+            <span style="flex:1;color:var(--text-primary);font-size:0.9rem;">${this.escapeHtml(ev.title)}</span>
+            <button onclick="CalendarApp.deleteEvent(${ev.id})" style="background:none;border:none;color:var(--rose);cursor:pointer;padding:4px;"><span class="material-icons-round" style="font-size:18px;">delete</span></button>
+          </div>`
+        ).join('');
+
+        showPreview(`Eventos — ${date}`, listHtml);
+      });
+    });
+  },
+
+  async deleteEvent(id) {
+    await db.calendarEvents.delete(id);
+    // Close preview
+    document.getElementById('preview-modal').classList.add('hidden');
+    this.loadEvents();
+  },
+
+  escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+};
+
+
+/* ============================================
+   10. POMODORO TIMER
+   ============================================ */
+const PomodoroApp = {
+  initialized: false,
+  mode: 'work',     // 'work' | 'short' | 'long'
+  durations: { work: 25 * 60, short: 5 * 60, long: 15 * 60 },
+  timeRemaining: 25 * 60,
+  totalTime: 25 * 60,
+  running: false,
+  interval: null,
+  sessionsToday: 0,
+  totalFocusTime: 0,
+
+  init() {
+    if (this.initialized) {
+      this.updateStats();
+      return;
+    }
+    this.initialized = true;
+
+    // Mode tabs
+    document.querySelectorAll('.pomo-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        this.setMode(tab.dataset.mode);
+      });
+    });
+
+    // Start/Pause
+    document.getElementById('pomo-start').addEventListener('click', () => {
+      if (this.running) this.pause();
+      else this.start();
+    });
+
+    // Reset
+    document.getElementById('pomo-reset').addEventListener('click', () => this.reset());
+
+    this.loadStats();
+    this.updateDisplay();
+  },
+
+  setMode(mode) {
+    this.pause();
+    this.mode = mode;
+    this.timeRemaining = this.durations[mode];
+    this.totalTime = this.durations[mode];
+
+    document.querySelectorAll('.pomo-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.pomo-tab[data-mode="${mode}"]`).classList.add('active');
+
+    // Change progress color based on mode
+    const progress = document.getElementById('pomo-progress');
+    if (mode === 'work') {
+      progress.style.stroke = 'var(--app-pomodoro)';
+      progress.style.filter = 'drop-shadow(0 0 8px var(--app-pomodoro-glow))';
+    } else {
+      progress.style.stroke = 'var(--app-sheets)';
+      progress.style.filter = 'drop-shadow(0 0 8px var(--app-sheets-glow))';
+    }
+
+    this.updateDisplay();
+  },
+
+  start() {
+    this.running = true;
+    const startBtn = document.getElementById('pomo-start');
+    startBtn.querySelector('.material-icons-round').textContent = 'pause';
+    startBtn.classList.add('running');
+
+    this.interval = setInterval(() => {
+      this.timeRemaining--;
+      if (this.timeRemaining <= 0) {
+        this.complete();
+      }
+      this.updateDisplay();
+    }, 1000);
+  },
+
+  pause() {
+    this.running = false;
+    clearInterval(this.interval);
+    const startBtn = document.getElementById('pomo-start');
+    startBtn.querySelector('.material-icons-round').textContent = 'play_arrow';
+    startBtn.classList.remove('running');
+  },
+
+  reset() {
+    this.pause();
+    this.timeRemaining = this.durations[this.mode];
+    this.totalTime = this.durations[this.mode];
+    this.updateDisplay();
+  },
+
+  async complete() {
+    this.pause();
+
+    // Save session
+    if (this.mode === 'work') {
+      this.sessionsToday++;
+      this.totalFocusTime += this.durations.work;
+      await db.pomodoroSessions.add({
+        type: 'work',
+        duration: this.durations.work,
+        completedAt: Date.now()
+      });
+    }
+
+    this.updateStats();
+    this.timeRemaining = 0;
+    this.updateDisplay();
+
+    // Auto-switch to break
+    setTimeout(() => {
+      if (this.mode === 'work') {
+        this.setMode(this.sessionsToday % 4 === 0 ? 'long' : 'short');
+      } else {
+        this.setMode('work');
+      }
+    }, 1500);
+  },
+
+  updateDisplay() {
+    const minutes = Math.floor(this.timeRemaining / 60);
+    const seconds = this.timeRemaining % 60;
+    document.getElementById('pomo-time').textContent =
+      String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+
+    // Update ring progress
+    const circumference = 2 * Math.PI * 90; // r=90
+    const progress = this.totalTime > 0 ? (this.totalTime - this.timeRemaining) / this.totalTime : 0;
+    const offset = circumference * (1 - progress);
+    document.getElementById('pomo-progress').style.strokeDashoffset = offset;
+  },
+
+  async loadStats() {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const allSessions = await db.pomodoroSessions
+      .where('completedAt')
+      .above(todayStart.getTime())
+      .toArray();
+
+    this.sessionsToday = allSessions.filter(s => s.type === 'work').length;
+    this.totalFocusTime = allSessions
+      .filter(s => s.type === 'work')
+      .reduce((sum, s) => sum + s.duration, 0);
+
+    this.updateStats();
+  },
+
+  updateStats() {
+    document.getElementById('pomo-sessions').textContent = this.sessionsToday;
+    const mins = Math.round(this.totalFocusTime / 60);
+    document.getElementById('pomo-total-time').textContent = mins >= 60
+      ? Math.floor(mins / 60) + 'h' + (mins % 60 > 0 ? mins % 60 + 'm' : '')
+      : mins + 'm';
   }
 };
 

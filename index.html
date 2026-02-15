@@ -54,7 +54,7 @@
             </div>
             <div class="hero-feature">
               <span class="material-icons-round">widgets</span>
-              <span>5 Apps Integrados</span>
+              <span>10 Apps Integrados</span>
             </div>
           </div>
         </div>
@@ -201,6 +201,56 @@
           <div class="app-card-info">
             <span class="app-card-name">Projetos</span>
             <span class="app-card-desc">Kanban board</span>
+          </div>
+          <span class="material-icons-round app-card-arrow">arrow_forward</span>
+        </button>
+        <button class="app-card" data-app="sheets">
+          <div class="app-card-icon sheets-icon">
+            <span class="material-icons-round">grid_on</span>
+          </div>
+          <div class="app-card-info">
+            <span class="app-card-name">Orbit Sheets</span>
+            <span class="app-card-desc">Planilhas</span>
+          </div>
+          <span class="material-icons-round app-card-arrow">arrow_forward</span>
+        </button>
+        <button class="app-card" data-app="slides">
+          <div class="app-card-icon slides-icon">
+            <span class="material-icons-round">slideshow</span>
+          </div>
+          <div class="app-card-info">
+            <span class="app-card-name">Orbit Slides</span>
+            <span class="app-card-desc">Apresenta&#231;&#245;es</span>
+          </div>
+          <span class="material-icons-round app-card-arrow">arrow_forward</span>
+        </button>
+        <button class="app-card" data-app="paint">
+          <div class="app-card-icon paint-icon">
+            <span class="material-icons-round">brush</span>
+          </div>
+          <div class="app-card-info">
+            <span class="app-card-name">Orbit Paint</span>
+            <span class="app-card-desc">Desenho e arte</span>
+          </div>
+          <span class="material-icons-round app-card-arrow">arrow_forward</span>
+        </button>
+        <button class="app-card" data-app="calendar">
+          <div class="app-card-icon calendar-icon">
+            <span class="material-icons-round">calendar_month</span>
+          </div>
+          <div class="app-card-info">
+            <span class="app-card-name">Calend&#225;rio</span>
+            <span class="app-card-desc">Eventos e datas</span>
+          </div>
+          <span class="material-icons-round app-card-arrow">arrow_forward</span>
+        </button>
+        <button class="app-card" data-app="pomodoro">
+          <div class="app-card-icon pomodoro-icon">
+            <span class="material-icons-round">timer</span>
+          </div>
+          <div class="app-card-info">
+            <span class="app-card-name">Pomodoro</span>
+            <span class="app-card-desc">Timer de foco</span>
           </div>
           <span class="material-icons-round app-card-arrow">arrow_forward</span>
         </button>
@@ -458,6 +508,182 @@
         </div>
       </div>
 
+      <!-- SHEETS WINDOW -->
+      <div class="app-window" id="window-sheets" data-app="sheets">
+        <div class="window-header">
+          <div class="window-title">
+            <span class="material-icons-round">grid_on</span>
+            Orbit Sheets
+          </div>
+          <div class="window-controls">
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
+            <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
+            <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
+          </div>
+        </div>
+        <div class="window-body">
+          <div class="sheets-toolbar">
+            <div class="sheets-cell-ref" id="sheets-cell-ref">A1</div>
+            <input type="text" class="sheets-formula-bar" id="sheets-formula-bar" placeholder="Digite valor ou f&#243;rmula (=SUM(A1:A5))">
+            <button class="btn-icon btn-save-drive" id="sheets-save-drive" title="Salvar no Drive"><span class="material-icons-round">cloud_upload</span></button>
+            <button class="btn-icon" id="sheets-export-csv" title="Exportar CSV"><span class="material-icons-round">download</span></button>
+          </div>
+          <div class="sheets-container" id="sheets-container">
+            <table class="sheets-table" id="sheets-table"></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDES WINDOW -->
+      <div class="app-window" id="window-slides" data-app="slides">
+        <div class="window-header">
+          <div class="window-title">
+            <span class="material-icons-round">slideshow</span>
+            Orbit Slides
+          </div>
+          <div class="window-controls">
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
+            <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
+            <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
+          </div>
+        </div>
+        <div class="window-body">
+          <div class="slides-toolbar">
+            <button class="btn-icon" id="slides-add" title="Novo Slide"><span class="material-icons-round">add</span></button>
+            <button class="btn-icon" id="slides-delete" title="Excluir Slide"><span class="material-icons-round">delete</span></button>
+            <div class="toolbar-separator"></div>
+            <select id="slides-bg-color" class="notepad-select" title="Cor de fundo">
+              <option value="#1a1a2e">Escuro</option>
+              <option value="#ffffff">Branco</option>
+              <option value="#0f3460">Azul</option>
+              <option value="#16213e">Marinho</option>
+              <option value="#1b1a2e">Roxo</option>
+              <option value="#162821">Verde</option>
+            </select>
+            <div class="toolbar-separator"></div>
+            <button class="btn-icon" id="slides-present" title="Apresentar"><span class="material-icons-round">play_arrow</span></button>
+            <button class="btn-icon btn-save-drive" id="slides-save-drive" title="Salvar no Drive"><span class="material-icons-round">cloud_upload</span></button>
+          </div>
+          <div class="slides-workspace">
+            <div class="slides-panel" id="slides-panel"></div>
+            <div class="slides-editor">
+              <div class="slides-canvas" id="slides-canvas" contenteditable="true">
+                <h1>Clique para editar o t&#237;tulo</h1>
+                <p>Subtitulo da apresenta&#231;&#227;o</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAINT WINDOW -->
+      <div class="app-window" id="window-paint" data-app="paint">
+        <div class="window-header">
+          <div class="window-title">
+            <span class="material-icons-round">brush</span>
+            Orbit Paint
+          </div>
+          <div class="window-controls">
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
+            <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
+            <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
+          </div>
+        </div>
+        <div class="window-body">
+          <div class="paint-toolbar">
+            <div class="paint-tools">
+              <button class="btn-icon paint-tool active" data-tool="brush" title="Pincel"><span class="material-icons-round">brush</span></button>
+              <button class="btn-icon paint-tool" data-tool="eraser" title="Borracha"><span class="material-icons-round">auto_fix_normal</span></button>
+              <button class="btn-icon paint-tool" data-tool="line" title="Linha"><span class="material-icons-round">horizontal_rule</span></button>
+              <button class="btn-icon paint-tool" data-tool="rect" title="Ret&#226;ngulo"><span class="material-icons-round">crop_square</span></button>
+              <button class="btn-icon paint-tool" data-tool="circle" title="C&#237;rculo"><span class="material-icons-round">circle</span></button>
+            </div>
+            <div class="toolbar-separator"></div>
+            <input type="color" id="paint-color" value="#a78bfa" title="Cor" class="paint-color-input">
+            <input type="range" id="paint-size" min="1" max="40" value="4" class="paint-size-slider" title="Tamanho">
+            <span class="paint-size-label" id="paint-size-label">4px</span>
+            <div class="toolbar-separator"></div>
+            <button class="btn-icon" id="paint-clear" title="Limpar tudo"><span class="material-icons-round">delete_sweep</span></button>
+            <button class="btn-icon" id="paint-undo" title="Desfazer"><span class="material-icons-round">undo</span></button>
+            <div class="toolbar-separator"></div>
+            <button class="btn-icon btn-save-drive" id="paint-save-drive" title="Salvar no Drive"><span class="material-icons-round">cloud_upload</span></button>
+            <button class="btn-icon" id="paint-export-png" title="Exportar PNG"><span class="material-icons-round">download</span></button>
+          </div>
+          <div class="paint-canvas-wrap">
+            <canvas id="paint-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- CALENDAR WINDOW -->
+      <div class="app-window" id="window-calendar" data-app="calendar">
+        <div class="window-header">
+          <div class="window-title">
+            <span class="material-icons-round">calendar_month</span>
+            Orbit Calendar
+          </div>
+          <div class="window-controls">
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
+            <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
+            <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
+          </div>
+        </div>
+        <div class="window-body">
+          <div class="calendar-toolbar">
+            <button class="btn-icon" id="cal-prev" title="M&#234;s anterior"><span class="material-icons-round">chevron_left</span></button>
+            <h3 class="calendar-month-title" id="cal-title">Fevereiro 2026</h3>
+            <button class="btn-icon" id="cal-next" title="Pr&#243;ximo m&#234;s"><span class="material-icons-round">chevron_right</span></button>
+            <button class="btn-icon" id="cal-today" title="Hoje" style="margin-left:auto"><span class="material-icons-round">today</span></button>
+          </div>
+          <div class="calendar-grid" id="calendar-grid"></div>
+        </div>
+      </div>
+
+      <!-- POMODORO WINDOW -->
+      <div class="app-window" id="window-pomodoro" data-app="pomodoro">
+        <div class="window-header">
+          <div class="window-title">
+            <span class="material-icons-round">timer</span>
+            Pomodoro Timer
+          </div>
+          <div class="window-controls">
+            <button class="win-btn close" data-action="close"><span class="material-icons-round">close</span></button>
+            <button class="win-btn minimize" data-action="minimize"><span class="material-icons-round">remove</span></button>
+            <button class="win-btn maximize" data-action="maximize"><span class="material-icons-round">crop_square</span></button>
+          </div>
+        </div>
+        <div class="window-body">
+          <div class="pomodoro-container">
+            <div class="pomodoro-mode-tabs">
+              <button class="pomo-tab active" data-mode="work">Foco</button>
+              <button class="pomo-tab" data-mode="short">Pausa Curta</button>
+              <button class="pomo-tab" data-mode="long">Pausa Longa</button>
+            </div>
+            <div class="pomodoro-ring">
+              <svg class="pomo-svg" viewBox="0 0 200 200">
+                <circle class="pomo-track" cx="100" cy="100" r="90"/>
+                <circle class="pomo-progress" id="pomo-progress" cx="100" cy="100" r="90"/>
+              </svg>
+              <div class="pomo-time" id="pomo-time">25:00</div>
+            </div>
+            <div class="pomodoro-controls">
+              <button class="pomo-btn" id="pomo-start"><span class="material-icons-round">play_arrow</span></button>
+              <button class="pomo-btn" id="pomo-reset"><span class="material-icons-round">replay</span></button>
+            </div>
+            <div class="pomodoro-stats">
+              <div class="pomo-stat">
+                <span class="pomo-stat-value" id="pomo-sessions">0</span>
+                <span class="pomo-stat-label">Sess&#245;es Hoje</span>
+              </div>
+              <div class="pomo-stat">
+                <span class="pomo-stat-value" id="pomo-total-time">0m</span>
+                <span class="pomo-stat-label">Tempo Focado</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /window-manager -->
 
     <!-- ========== TASKBAR ========== -->
@@ -505,6 +731,26 @@
         <button class="start-app" data-app="chat">
           <div class="app-icon-mini"><span class="material-icons-round">forum</span></div>
           <span>Team Chat</span>
+        </button>
+        <button class="start-app" data-app="sheets">
+          <div class="app-icon-mini"><span class="material-icons-round">grid_on</span></div>
+          <span>Orbit Sheets</span>
+        </button>
+        <button class="start-app" data-app="slides">
+          <div class="app-icon-mini"><span class="material-icons-round">slideshow</span></div>
+          <span>Orbit Slides</span>
+        </button>
+        <button class="start-app" data-app="paint">
+          <div class="app-icon-mini"><span class="material-icons-round">brush</span></div>
+          <span>Orbit Paint</span>
+        </button>
+        <button class="start-app" data-app="calendar">
+          <div class="app-icon-mini"><span class="material-icons-round">calendar_month</span></div>
+          <span>Calend&#225;rio</span>
+        </button>
+        <button class="start-app" data-app="pomodoro">
+          <div class="app-icon-mini"><span class="material-icons-round">timer</span></div>
+          <span>Pomodoro</span>
         </button>
       </div>
       <div class="start-menu-footer">

@@ -9,6 +9,12 @@ db.version(1).stores({
   files: '++id, name, parentId, type, mimeType, createdAt',
   kanban: '++id, title, status, createdAt'
 });
+db.version(2).stores({
+  files: '++id, name, parentId, type, mimeType, createdAt',
+  kanban: '++id, title, status, createdAt',
+  calendarEvents: '++id, title, date, color, createdAt',
+  pomodoroSessions: '++id, type, duration, completedAt'
+});
 
 // ─── Utility: Simple Hash ───
 async function hashPassword(password) {
@@ -243,14 +249,24 @@ const WindowManager = {
       notepad: 'Bloco de Notas',
       calculator: 'Calculadora',
       kanban: 'Projetos',
-      chat: 'Team Chat'
+      chat: 'Team Chat',
+      sheets: 'Orbit Sheets',
+      slides: 'Orbit Slides',
+      paint: 'Orbit Paint',
+      calendar: 'Orbit Calendar',
+      pomodoro: 'Pomodoro'
     };
     const appIcons = {
       drive: 'cloud',
       notepad: 'edit_note',
       calculator: 'calculate',
       kanban: 'view_kanban',
-      chat: 'forum'
+      chat: 'forum',
+      sheets: 'grid_on',
+      slides: 'slideshow',
+      paint: 'brush',
+      calendar: 'calendar_month',
+      pomodoro: 'timer'
     };
 
     Object.entries(this.windows).forEach(([app, w]) => {
